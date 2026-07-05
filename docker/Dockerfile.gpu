@@ -22,11 +22,20 @@ RUN groupadd --gid 1000 voiceforge \
 
 WORKDIR /app
 
-COPY requirements.txt requirements-xtts.txt requirements-f5.txt requirements-openvoice.txt ./
+COPY requirements.txt requirements-xtts.txt requirements-f5.txt requirements-openvoice.txt requirements-rvc.txt ./
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir torchaudio==2.8.0 \
        --index-url https://download.pytorch.org/whl/cu126 \
     && pip install --no-cache-dir -r requirements.txt -r requirements-xtts.txt -r requirements-f5.txt
+
+# Isolated RVC worker venv — fairseq/numpy<2 conflict with coqui-tts above.
+RUN python -m venv /opt/rvc-venv \
+    && /opt/rvc-venv/bin/pip install --no-cache-dir --upgrade pip \
+    && /opt/rvc-venv/bin/pip install --no-cache-dir \
+       torch==2.1.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu121 \
+    && /opt/rvc-venv/bin/pip install --no-cache-dir -r requirements-rvc.txt \
+    && /opt/rvc-venv/bin/pip install --no-cache-dir \
+       "git+https://github.com/nakshatra-garg/rvc-no-gui.git"
 
 COPY app ./app
 COPY scripts ./scripts
@@ -39,6 +48,7 @@ USER voiceforge
 ENV VOICEFORGE_DATA_DIR=/app/data \
     VOICEFORGE_MODELS_DIR=/app/models \
     VOICEFORGE_DEVICE=cuda \
+    VOICEFORGE_RVC_PYTHON=/opt/rvc-venv/bin/python \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
 

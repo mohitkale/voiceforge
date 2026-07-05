@@ -47,6 +47,8 @@ openvoice = [
   "torchaudio==2.8.0",
   "transformers==4.57.6",
 ]
+# RVC runs in an isolated worker venv — see requirements-rvc.txt (not installed here).
+rvc = []
 dev = [
   "pytest==9.1.1",
   "pytest-asyncio==1.4.0",

@@ -85,6 +85,17 @@ async def create_voice(
             status.HTTP_503_SERVICE_UNAVAILABLE, f"Engine '{engine_id}' is not ready yet"
         )
 
+    if tier == VoiceTier.high_fidelity and not clone_engine.capabilities.fine_tunable:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            f"Engine '{engine_id}' does not support tier='high_fidelity'",
+        )
+    if tier == VoiceTier.instant and not clone_engine.capabilities.zero_shot:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            f"Engine '{engine_id}' requires tier='high_fidelity' (fine-tuned training)",
+        )
+
     settings = get_settings()
     if not files:
         raise HTTPException(
@@ -235,3 +246,62 @@ async def get_preview(voice_id: str, session: Session = Depends(get_session)):
     if not p.exists():
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No preview available yet")
     return FileResponse(p, media_type="audio/wav")
+
+
+@router.post("/{voice_id}/upgrade", response_model=VoiceDetail)
+async def upgrade_voice(
+    voice_id: str,
+    session: Session = Depends(get_session),
+) -> VoiceDetail:
+    """Re-process a voice at ``high_fidelity`` tier (e.g. upgrade to RVC)."""
+    voice = session.get(Voice, voice_id)
+    if voice is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Voice not found")
+    if voice.status == VoiceStatus.processing:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Voice is already processing — wait for completion or add samples",
+        )
+
+    try:
+        clone_engine = get_engine(voice.engine_id)
+    except UnknownEngineError:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            f"Unknown engine '{voice.engine_id}'",
+        ) from None
+
+    if not clone_engine.capabilities.fine_tunable:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            f"Engine '{voice.engine_id}' does not support high-fidelity upgrade",
+        )
+    if not clone_engine.is_ready():
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            f"Engine '{voice.engine_id}' is not ready yet",
+        )
+
+    if not voice.samples:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "Voice has no samples — upload reference audio before upgrading",
+        )
+
+    voice.tier = VoiceTier.high_fidelity
+    voice.status = VoiceStatus.processing
+    voice.error_message = None
+    voice.ready_at = None
+    session.add(voice)
+    session.commit()
+    session.refresh(voice)
+
+    sample_paths = [str(samples_dir(voice_id) / s.stored_filename) for s in voice.samples]
+    _spawn(run_create_voice(voice.id, sample_paths, voice.language))
+
+    return VoiceDetail(
+        **_to_summary(voice).model_dump(),
+        error_message=None,
+        ready_at=None,
+        sample_count=len(voice.samples),
+    )

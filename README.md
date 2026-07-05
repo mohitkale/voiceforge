@@ -23,8 +23,9 @@ This is milestone **M0 + M1 + M2 + M3a + M3b** of the project (see [Roadmap](#ro
   similarity + optional Whisper WER.
 - CPU and GPU Docker images.
 
-The RVC high-fidelity fine-tuning pipeline is not yet implemented — see
-[Roadmap](#roadmap).
+The RVC high-fidelity fine-tuning pipeline is available via the `rvc` engine
+(GPU recommended; runs training in an isolated worker venv — see
+[RVC setup](#rvc-setup-high-fidelity-tier)).
 
 ## Mission & non-negotiables
 
@@ -53,7 +54,7 @@ The RVC high-fidelity fine-tuning pipeline is not yet implemented — see
                                                           │             │               │
                                                           │             ▼               │
                                                           │          XTTS-v2, F5-TTS,   │
-                                                          │          OpenVoice V2       │
+                                                          │          OpenVoice V2, RVC  │
                                                           │                             │
                                                           │  SQLite (voice metadata)     │
                                                           │  data/ (samples, artifacts)  │
@@ -141,7 +142,33 @@ Interactive API docs: `http://localhost:8089/docs`.
 |---|---|---|
 | Works on | Any host, incl. a cheap VPS | Host with an NVIDIA GPU + Container Toolkit |
 | XTTS-v2 synthesis | Several seconds per sentence | Sub-second to a few seconds |
-| Verified in this repo's own testing | ✅ Full e2e (all three engines) via `scripts/e2e_smoke_test.py` | ⚠️ Written and reviewed carefully, but **not** run against a real GPU while building this — no GPU was available. Please verify on your hardware. |
+| Verified in this repo's own testing | ✅ Full e2e (all three engines) via `scripts/e2e_smoke_test.py` | ⚠️ Written and reviewed carefully, but **not** run against a real GPU while building this — no GPU was available. Please verify on your hardware. RVC requires the GPU image. |
+
+### RVC setup (high-fidelity tier)
+
+RVC training uses **fairseq** and **numpy&lt;2**, which conflict with
+coqui-tts in the main VoiceForge venv. Training/inference therefore run in an
+**isolated worker venv** (`/opt/rvc-venv` in the GPU Docker image, or install
+manually from `requirements-rvc.txt`).
+
+```bash
+# GPU Docker (recommended) — worker venv is pre-installed:
+docker compose -f docker/docker-compose.yml --profile gpu up --build
+
+# Create a high-fidelity RVC voice (≥3 min of clean speech recommended):
+curl -F "name=Studio Voice" -F "engine_id=rvc" -F "tier=high_fidelity" \
+  -F "consent=true" -F "files=@vocals.wav" http://localhost:8089/v1/voices
+
+# Upgrade an existing voice to high-fidelity (re-trains if engine supports it):
+curl -X POST http://localhost:8089/v1/voices/<id>/upgrade
+
+# Pre-download RVC base weights (HuBERT, RMVPE):
+docker compose -f docker/docker-compose.yml --profile gpu run --rm voiceforge-download --engine rvc
+```
+
+Set `VOICEFORGE_RVC_PYTHON=/path/to/rvc-venv/bin/python` when running outside
+the GPU image. Tune training with `VOICEFORGE_RVC_EPOCHS` (default `50`) and
+`VOICEFORGE_RVC_BATCH_SIZE` (default `4`).
 
 ## API reference
 
@@ -293,8 +320,8 @@ valid WAV output).
       `CloneEngine`.
 - [x] **M3b — OpenVoice V2 engine:** MIT-licensed zero-shot engine (Coqui VC
       + YourTTS base) behind `CloneEngine`.
-- [ ] **M4 — High-fidelity tier:** RVC training pipeline, SSE
-      training-progress events, "upgrade this voice" flow.
+- [x] **M4 — High-fidelity tier:** RVC training pipeline (isolated worker),
+      SSE training-progress events, `POST /v1/voices/{id}/upgrade` flow.
 - [x] **M5 — Docker hardening:** GPU + CPU images, model-cache volume,
       `voiceforge-download` compose service, `scripts/e2e_smoke_test.py`
       (CPU e2e verified for openvoice-v2, xtts-v2, f5-tts).

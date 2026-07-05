@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -56,10 +57,43 @@ def download_openvoice_v2() -> None:
     print(f"Done. Cached under {settings.models_dir}")
 
 
+def download_rvc() -> None:
+    """Pre-fetch RVC base weights (HuBERT, RMVPE) via the isolated worker."""
+    import shutil
+    import subprocess
+
+    settings = get_settings()
+    settings.models_dir.mkdir(parents=True, exist_ok=True)
+
+    rvc_python = settings.rvc_python
+    if rvc_python is None:
+        default = Path("/opt/rvc-venv/bin/python")
+        rvc_python = default if default.is_file() else None
+    if rvc_python is None:
+        found = shutil.which("python3")
+        rvc_python = Path(found) if found else None
+
+    worker = Path(__file__).resolve().parent / "rvc_worker.py"
+    if rvc_python is None or not worker.is_file():
+        print(
+            "Skipping RVC download — set VOICEFORGE_RVC_PYTHON or install "
+            "/opt/rvc-venv (see requirements-rvc.txt)"
+        )
+        return
+
+    print("Downloading RVC base models (HuBERT, RMVPE) via worker setup...")
+    subprocess.run(
+        [str(rvc_python), str(worker), "setup"],
+        check=True,
+    )
+    print(f"Done. RVC assets cached via worker under {settings.models_dir}")
+
+
 ENGINES = {
     "xtts-v2": download_xtts_v2,
     "f5-tts": download_f5_tts,
     "openvoice-v2": download_openvoice_v2,
+    "rvc": download_rvc,
 }
 
 

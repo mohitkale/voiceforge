@@ -71,8 +71,24 @@ class FailingEngine(FakeEngine):
         raise EngineError("synthetic failure for tests")
 
 
+class FineTunableEngine(FakeEngine):
+    id = "fine-engine"
+    label = "Fine-tunable Engine (tests only)"
+    capabilities = CloneCapabilities(
+        zero_shot=False,
+        fine_tunable=True,
+        min_sample_seconds=60.0,
+        recommended_sample_seconds=120.0,
+        languages=["en"],
+        requires_gpu=True,
+        license="MIT",
+        approx_vram_gb=4.0,
+    )
+
+
 engine_registry._FACTORIES.setdefault(FAKE_ENGINE_ID, FakeEngine)
 engine_registry._FACTORIES.setdefault("failing-engine", FailingEngine)
+engine_registry._FACTORIES.setdefault("fine-engine", FineTunableEngine)
 
 
 def make_wav_bytes(duration_seconds: float = 3.0, sample_rate: int = 22050) -> bytes:

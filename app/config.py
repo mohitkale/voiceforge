@@ -53,6 +53,12 @@ class Settings(BaseSettings):
     # Trim silence / normalize reference uploads before cloning (M2).
     preprocess_samples: bool = True
 
+    # RVC high-fidelity tier (M4) — runs in an isolated worker venv.
+    # Defaults to /opt/rvc-venv/bin/python when present (GPU Docker image).
+    rvc_python: Path | None = None
+    rvc_epochs: int = 50
+    rvc_batch_size: int = 4
+
     log_level: str = "info"
 
     @property

@@ -7,6 +7,7 @@ def test_list_engines_includes_built_in_ids(client):
     assert "xtts-v2" in ids
     assert "f5-tts" in ids
     assert "openvoice-v2" in ids
+    assert "rvc" in ids
 
 
 def test_openvoice_engine_metadata(client):
@@ -24,6 +25,15 @@ def test_f5_engine_metadata(client):
     assert f5["label"].startswith("F5-TTS")
     assert f5["capabilities"]["zero_shot"] is True
     assert "Apache" in f5["capabilities"]["license"]
+
+
+def test_rvc_engine_metadata(client):
+    resp = client.get("/v1/engines")
+    rvc = next(e for e in resp.json() if e["id"] == "rvc")
+    assert rvc["label"].startswith("RVC")
+    assert rvc["capabilities"]["fine_tunable"] is True
+    assert rvc["capabilities"]["zero_shot"] is False
+    assert rvc["capabilities"]["requires_gpu"] is True
 
 
 def test_list_engines_includes_fake_engine(client):

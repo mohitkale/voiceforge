@@ -98,3 +98,35 @@ def test_list_and_get_and_delete_voice(client):
 def test_get_voice_not_found(client):
     resp = client.get("/v1/voices/does-not-exist")
     assert resp.status_code == 404
+
+
+def test_create_voice_rejects_high_fidelity_on_zero_shot_engine(client):
+    resp = _create_voice(client, engine_id=FAKE_ENGINE_ID, tier="high_fidelity")
+    assert resp.status_code == 422
+
+
+def test_create_voice_rejects_instant_on_fine_tunable_engine(client):
+    resp = _create_voice(client, engine_id="fine-engine", tier="instant")
+    assert resp.status_code == 422
+
+
+def test_upgrade_voice_happy_path(client):
+    created = _create_voice(client, engine_id="fine-engine", tier="high_fidelity")
+    assert created.status_code == 201
+    voice_id = created.json()["id"]
+    final = _wait_for_status(client, voice_id)
+    assert final["status"] == "ready"
+
+    # Downgrade tier in DB isn't supported — upgrade re-trains at high_fidelity
+    upgraded = client.post(f"/v1/voices/{voice_id}/upgrade")
+    assert upgraded.status_code == 200
+    assert upgraded.json()["tier"] == "high_fidelity"
+    assert upgraded.json()["status"] == "processing"
+
+
+def test_upgrade_voice_rejects_non_fine_tunable_engine(client):
+    created = _create_voice(client).json()
+    voice_id = created["id"]
+    _wait_for_status(client, voice_id)
+    resp = client.post(f"/v1/voices/{voice_id}/upgrade")
+    assert resp.status_code == 422
