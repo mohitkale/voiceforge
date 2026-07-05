@@ -1,0 +1,50 @@
+# GPU image — requires the NVIDIA Container Toolkit on the host
+# (https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/).
+# Base image ships a matching torch+CUDA+cuDNN build already, so we only add
+# torchaudio (pinned to the same version, from the same CUDA wheel index) and
+# the rest of the app's dependencies on top.
+#
+# NOTE: this Dockerfile was written and reviewed carefully but could not be
+# built/run against a real GPU in the environment that produced it — no
+# NVIDIA GPU was available. Please verify on your target GPU host and open an
+# issue if anything needs adjusting.
+FROM pytorch/pytorch:2.8.0-cuda12.6-cudnn9-runtime
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       libsndfile1 \
+       ffmpeg \
+       curl \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN groupadd --gid 1000 voiceforge \
+    && useradd --uid 1000 --gid voiceforge --shell /bin/bash --create-home voiceforge
+
+WORKDIR /app
+
+COPY requirements.txt requirements-xtts.txt ./
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir torchaudio==2.8.0 \
+       --index-url https://download.pytorch.org/whl/cu126 \
+    && pip install --no-cache-dir -r requirements.txt -r requirements-xtts.txt
+
+COPY app ./app
+COPY scripts ./scripts
+
+RUN mkdir -p /app/data /app/models \
+    && chown -R voiceforge:voiceforge /app
+
+USER voiceforge
+
+ENV VOICEFORGE_DATA_DIR=/app/data \
+    VOICEFORGE_MODELS_DIR=/app/models \
+    VOICEFORGE_DEVICE=cuda \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+EXPOSE 8089
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD curl -fsS http://localhost:8089/healthz || exit 1
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8089"]

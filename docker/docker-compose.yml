@@ -1,0 +1,42 @@
+x-common: &common
+  env_file:
+    # Optional: copy .env.example -> .env at the repo root to set
+    # VOICEFORGE_API_TOKEN, CORS origins, etc. Compose runs fine without it
+    # (pure localhost/dev defaults apply), but see README before exposing
+    # this beyond localhost.
+    - path: ../.env
+      required: false
+  ports:
+    - "8089:8089"
+  volumes:
+    - ../data:/app/data
+    - models-cache:/app/models
+  restart: unless-stopped
+
+services:
+  # Default (CPU) profile: `docker compose up voiceforge-cpu`
+  voiceforge-cpu:
+    <<: *common
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.cpu
+    profiles: ["cpu"]
+
+  # GPU profile: `docker compose --profile gpu up voiceforge-gpu`
+  # Requires the NVIDIA Container Toolkit on the host.
+  voiceforge-gpu:
+    <<: *common
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.gpu
+    profiles: ["gpu"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+volumes:
+  models-cache:

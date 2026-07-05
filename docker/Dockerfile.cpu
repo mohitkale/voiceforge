@@ -1,0 +1,48 @@
+# CPU-only image — works on any host (small VPS included), no NVIDIA runtime
+# required. Expect XTTS-v2 synthesis to take several seconds per sentence.
+FROM python:3.11-slim-bookworm
+
+# libsndfile1: audio decode/encode backend for `soundfile`.
+# ffmpeg: broader input-format support (mp3/m4a/aac) for uploaded samples.
+# curl: used by the container HEALTHCHECK.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       libsndfile1 \
+       ffmpeg \
+       curl \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN groupadd --gid 1000 voiceforge \
+    && useradd --uid 1000 --gid voiceforge --shell /bin/bash --create-home voiceforge
+
+WORKDIR /app
+
+# Dependencies install in their own layer (cached independently of app-code
+# changes). torch/torchaudio come from PyTorch's dedicated CPU wheel index so
+# no CUDA runtime libraries get pulled in on a CPU-only host.
+COPY requirements.txt requirements-xtts.txt ./
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir torch==2.8.0 torchaudio==2.8.0 \
+       --index-url https://download.pytorch.org/whl/cpu \
+    && pip install --no-cache-dir -r requirements.txt -r requirements-xtts.txt
+
+COPY app ./app
+COPY scripts ./scripts
+
+RUN mkdir -p /app/data /app/models \
+    && chown -R voiceforge:voiceforge /app
+
+USER voiceforge
+
+ENV VOICEFORGE_DATA_DIR=/app/data \
+    VOICEFORGE_MODELS_DIR=/app/models \
+    VOICEFORGE_DEVICE=cpu \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+EXPOSE 8089
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD curl -fsS http://localhost:8089/healthz || exit 1
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8089"]

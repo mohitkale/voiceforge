@@ -1,0 +1,13 @@
+# Core dependencies. Keep in sync with `pyproject.toml`'s [project.dependencies] --
+# this file exists purely so Docker can install deps in their own cached layer
+# without needing the `app/` source tree present yet.
+fastapi==0.139.0
+uvicorn[standard]==0.50.0
+python-multipart==0.0.32
+sqlmodel==0.0.39
+pydantic==2.13.4
+pydantic-settings==2.14.2
+aiofiles==25.1.0
+soundfile==0.14.0
+numpy==2.4.6
+python-dotenv==1.2.2

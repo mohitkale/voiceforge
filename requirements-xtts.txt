@@ -1,0 +1,20 @@
+# XTTS-v2 engine dependencies. torch itself is installed separately in the
+# Dockerfiles (CPU wheel index for Dockerfile.cpu, CUDA base image for
+# Dockerfile.gpu) so the right build gets picked; this file only pins what
+# layers on top of it. Keep in sync with `pyproject.toml`'s `xtts` extra.
+#
+# torch==2.8.0: newest version confirmed compatible with coqui-tts 0.27.5
+# without requiring the extra `torchcodec` dependency (needed from
+# torch>=2.9). Also the newest release that fixes GHSA-3749-ghw9-m3mg (local
+# DoS, fixed 2.7.1) and GHSA-887c-mr87-cxwp (resource shutdown, fixed 2.8.0).
+# A few lower-severity, local-access-only advisories remain open upstream as
+# of this release (see README's "Security notes") — none are reachable
+# through this service's request-handling code paths.
+torchaudio==2.8.0
+# Pinned explicitly: coqui-tts declares only a lower bound (transformers>=4.57)
+# and the latest transformers 5.x removed `isin_mps_friendly` from
+# `transformers.pytorch_utils`, which coqui-tts 0.27.5's XTTS/Tortoise layers
+# still import, breaking `from TTS.api import TTS` entirely. 4.57.x is the
+# newest line confirmed compatible.
+transformers==4.57.6
+coqui-tts==0.27.5

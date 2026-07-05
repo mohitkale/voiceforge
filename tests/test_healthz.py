@@ -1,0 +1,10 @@
+def test_healthz_ok(client):
+    resp = client.get("/healthz")
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "ok"
+
+
+def test_healthz_requires_no_auth(client, settings, monkeypatch):
+    monkeypatch.setattr(settings, "api_token", "some-secret")
+    resp = client.get("/healthz")
+    assert resp.status_code == 200

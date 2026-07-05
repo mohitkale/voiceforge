@@ -1,0 +1,67 @@
+[project]
+name = "voiceforge"
+version = "0.1.0"
+description = "Local-first, open-source, multi-engine voice cloning service"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+license = { text = "MIT" }
+
+dependencies = [
+  "fastapi==0.139.0",
+  "uvicorn[standard]==0.50.0",
+  "python-multipart==0.0.32",
+  "sqlmodel==0.0.39",
+  "pydantic==2.13.4",
+  "pydantic-settings==2.14.2",
+  "aiofiles==25.1.0",
+  "soundfile==0.14.0",
+  "numpy==2.4.6",
+  "python-dotenv==1.2.2",
+]
+
+[project.optional-dependencies]
+# Heavy ML deps are intentionally split out of the base install. The Docker
+# images install torch (CPU or CUDA build) from PyTorch's own index first,
+# then this extra, so the resolver never picks a mismatched wheel.
+# torch==2.8.0: newest version confirmed compatible with coqui-tts 0.27.5
+# without requiring `torchcodec` (needed from torch>=2.9); also picks up
+# fixes for GHSA-3749-ghw9-m3mg and GHSA-887c-mr87-cxwp over torch 2.6.
+# coqui-tts>=0.27 is the actively maintained idiap fork of the original (now
+# defunct) Coqui repo.
+xtts = [
+  "coqui-tts==0.27.5",
+  "torchaudio==2.8.0",
+  # Pinned: coqui-tts only declares transformers>=4.57, but transformers 5.x
+  # dropped `isin_mps_friendly`, which coqui-tts's Tortoise/XTTS layers still
+  # import — breaks `from TTS.api import TTS` entirely on newer transformers.
+  "transformers==4.57.6",
+]
+dev = [
+  "pytest==9.1.1",
+  "pytest-asyncio==1.4.0",
+  "httpx==0.28.1",
+  "ruff==0.15.20",
+  "pip-audit==2.10.1",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "S"]
+# S101: asserts are fine (tests). B008: Depends()/File() in defaults is the
+# required FastAPI DI pattern, not a real bug. S104: 0.0.0.0 is deliberate —
+# this always runs inside a container / behind a firewall, gated by config.
+ignore = ["S101", "B008", "S104"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["app"]
