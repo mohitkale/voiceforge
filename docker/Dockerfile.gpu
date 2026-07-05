@@ -22,11 +22,11 @@ RUN groupadd --gid 1000 voiceforge \
 
 WORKDIR /app
 
-COPY requirements.txt requirements-xtts.txt ./
+COPY requirements.txt requirements-xtts.txt requirements-f5.txt ./
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir torchaudio==2.8.0 \
        --index-url https://download.pytorch.org/whl/cu126 \
-    && pip install --no-cache-dir -r requirements.txt -r requirements-xtts.txt
+    && pip install --no-cache-dir -r requirements.txt -r requirements-xtts.txt -r requirements-f5.txt
 
 COPY app ./app
 COPY scripts ./scripts

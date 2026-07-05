@@ -11,19 +11,19 @@ dependency on it.
 
 ## Status
 
-This is milestone **M0 + M1 + M2** of the project (see [Roadmap](#roadmap)):
+This is milestone **M0 + M1 + M2 + M3a** of the project (see [Roadmap](#roadmap)):
 
 - Full service scaffold: FastAPI app, SQLite metadata store, bearer-token
   auth, CORS, background job processing, SSE progress events.
-- One fully working, real cloning engine: **XTTS-v2** (zero-shot, instant
-  tier) — upload a sample, get a cloned voice, synthesize speech from text.
+- Two zero-shot cloning engines: **XTTS-v2** (Coqui, CPML) and **F5-TTS**
+  (SWivid, Apache-2.0/CC) — pick per voice via `engine_id`.
 - Reference-audio preprocessing on upload (trim silence, high-pass, normalize).
 - Quality benchmark script (`scripts/benchmark_quality.py`) for speaker
   similarity + optional Whisper WER.
 - CPU and GPU Docker images.
 
-Multi-engine support (F5-TTS, OpenVoice V2) and the RVC high-fidelity
-fine-tuning pipeline are not yet implemented — see [Roadmap](#roadmap).
+OpenVoice V2 and the RVC high-fidelity fine-tuning pipeline are not yet
+implemented — see [Roadmap](#roadmap).
 
 ## Mission & non-negotiables
 
@@ -252,8 +252,8 @@ matching the Docker images).
 ```bash
 python3.11 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"                    # core + dev tooling, no ML stack
-pip install -r requirements-xtts.txt \
-  --extra-index-url https://download.pytorch.org/whl/cpu  # + XTTS-v2, if you want to run it locally
+pip install -r requirements-xtts.txt -r requirements-f5.txt \
+  --extra-index-url https://download.pytorch.org/whl/cpu  # both engines locally
 
 pytest                 # full test suite (mocks the ML engine — no GPU/torch download required)
 ruff check app tests scripts
@@ -281,8 +281,9 @@ valid WAV output).
       → `/synthesize` returns WAV. Manually + automatically verified.
 - [x] **M2 — Quality benchmarking:** `scripts/benchmark_quality.py`
       (speaker-similarity + WER), reference-audio preprocessing on upload.
-- [ ] **M3 — Multi-engine:** F5-TTS and OpenVoice V2 behind the same
-      interface.
+- [x] **M3a — F5-TTS engine:** permissive-license zero-shot engine behind
+      `CloneEngine`.
+- [ ] **M3b — OpenVoice V2** behind the same interface.
 - [ ] **M4 — High-fidelity tier:** RVC training pipeline, SSE
       training-progress events, "upgrade this voice" flow.
 - [x] **M5 — GPU packaging:** `Dockerfile.gpu`, GPU compose profile,

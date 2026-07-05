@@ -1,0 +1,8 @@
+# F5-TTS engine dependencies. torch/torchaudio are installed separately in the
+# Dockerfiles (see requirements-xtts.txt). Keep transformers pinned to the same
+# version as coqui-tts so both engines can coexist in one image.
+#
+# f5-tts pulls gradio and other UI deps we never use at runtime — acceptable
+# for a Docker-isolated install; they are not imported by the API path.
+f5-tts==1.1.20
+transformers==4.57.6

@@ -14,7 +14,6 @@ itself is MPL-2.0. See README's "Licensing & responsible use" section.
 from __future__ import annotations
 
 import asyncio
-import io
 import logging
 import os
 from pathlib import Path
@@ -30,6 +29,7 @@ from app.engines.base import (
     Tier,
     VoiceArtifact,
 )
+from app.engines.wav_output import to_wav_bytes as _to_wav_bytes
 from app.storage import artifacts_dir
 
 logger = logging.getLogger("voiceforge.engines.xtts_v2")
@@ -231,23 +231,3 @@ class XttsV2Engine:
             raise EngineError(f"Synthesis failed: {exc}") from exc
 
         return _to_wav_bytes(wav, source_rate=XTTS_NATIVE_SAMPLE_RATE, target_rate=target_rate)
-
-
-def _to_wav_bytes(wav: np.ndarray, source_rate: int, target_rate: int) -> bytes:
-    import soundfile as sf
-
-    if target_rate != source_rate:
-        wav = _resample(wav, source_rate, target_rate)
-
-    buf = io.BytesIO()
-    sf.write(buf, wav, samplerate=target_rate, subtype="PCM_16", format="WAV")
-    return buf.getvalue()
-
-
-def _resample(wav: np.ndarray, source_rate: int, target_rate: int) -> np.ndarray:
-    import torch
-    import torchaudio
-
-    tensor = torch.from_numpy(wav).unsqueeze(0)
-    resampled = torchaudio.functional.resample(tensor, source_rate, target_rate)
-    return resampled.squeeze(0).numpy()

@@ -10,10 +10,12 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from app.engines.base import CloneEngine
+from app.engines.f5_tts import F5TtsEngine
 from app.engines.xtts_v2 import XttsV2Engine
 
 _FACTORIES: dict[str, Callable[[], CloneEngine]] = {
     "xtts-v2": XttsV2Engine,
+    "f5-tts": F5TtsEngine,
 }
 
 _instances: dict[str, CloneEngine] = {}
