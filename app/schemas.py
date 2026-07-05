@@ -55,3 +55,20 @@ class SynthesizeRequest(CamelModel):
     sample_rate: int | None = None
     speed: float | None = Field(default=None, gt=0.25, le=4.0)
     language: str | None = None
+
+
+class MetricsSnapshot(CamelModel):
+    uptime_seconds: float
+    voices_created: int
+    voices_ready: int
+    voices_failed: int
+    synth_requests: int
+    synth_errors: int
+
+
+class HealthResponse(CamelModel):
+    status: str
+    service: str
+    version: str
+    engines_ready: int
+    engines_total: int

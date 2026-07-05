@@ -9,13 +9,19 @@ from app.db import get_session
 from app.db_models import Voice, VoiceStatus
 from app.engines.base import EngineError, SynthesizeOptions, VoiceArtifact
 from app.engines.registry import UnknownEngineError, get_engine
+from app.metrics import get_metrics
 from app.schemas import SynthesizeRequest
 from app.security import auth_dependency, get_job_limiter
+from app.watermark import apply_watermark_to_wav
 
 router = APIRouter(prefix="/v1", tags=["synthesize"], dependencies=[Depends(auth_dependency)])
 
 
-@router.post("/synthesize")
+@router.post(
+    "/synthesize",
+    summary="Synthesize speech",
+    response_description="16-bit PCM WAV audio",
+)
 async def synthesize(
     body: SynthesizeRequest,
     session: Session = Depends(get_session),
@@ -50,9 +56,18 @@ async def synthesize(
     )
 
     async with get_job_limiter():
+        get_metrics().inc("synth_requests")
         try:
             wav_bytes = await clone_engine.synthesize(voice.id, artifact, body.text, opts)
         except EngineError as exc:
+            get_metrics().inc("synth_errors")
             raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(exc)) from exc
+
+    if settings.watermark_enabled:
+        wav_bytes = apply_watermark_to_wav(
+            wav_bytes,
+            voice_id=voice.id,
+            strength=settings.watermark_strength,
+        )
 
     return Response(content=wav_bytes, media_type="audio/wav")

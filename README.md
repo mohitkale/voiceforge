@@ -175,7 +175,8 @@ the GPU image. Tune training with `VOICEFORGE_RVC_EPOCHS` (default `50`) and
 Full interactive docs at `/docs`. Summary:
 
 ```
-GET  /healthz                        -> { status, service }                (no auth)
+GET  /healthz                        -> { status, service, version, enginesReady, enginesTotal }  (no auth)
+GET  /v1/metrics                     -> { uptimeSeconds, voicesCreated, synthRequests, ... }     (auth)
 
 GET  /v1/engines                     -> [{ id, label, capabilities, ready, configured }]
 
@@ -189,6 +190,7 @@ GET  /v1/voices/{id}                 -> VoiceDetail (incl. errorMessage, readyAt
 DELETE /v1/voices/{id}                -> 204, deletes voice + samples + artifacts
 
 POST /v1/voices/{id}/samples         (multipart) -> add more reference audio
+POST /v1/voices/{id}/upgrade         -> re-train at high_fidelity tier (fine-tunable engines)
 GET  /v1/voices/{id}/events          (SSE)       -> processing progress events
 GET  /v1/voices/{id}/preview         -> a short cached WAV clip
 
@@ -213,6 +215,9 @@ All settings are environment variables, prefixed `VOICEFORGE_` (see
 | `VOICEFORGE_DEVICE` | `cpu`, `cuda`, or `auto`. |
 | `VOICEFORGE_MAX_UPLOAD_MB` / `_MAX_SAMPLES_PER_VOICE` / `_MAX_SYNTH_CHARS` | Abuse/resource-exhaustion limits. |
 | `VOICEFORGE_PREPROCESS_SAMPLES` | Trim/normalize reference uploads before cloning (default: true). |
+| `VOICEFORGE_LOG_FORMAT` | `text` (default) or `json` for structured log lines. |
+| `VOICEFORGE_WATERMARK_ENABLED` | Mix a quiet voice-specific fingerprint into synth output (default: false). |
+| `VOICEFORGE_WATERMARK_STRENGTH` | Watermark amplitude 0–1 (default: `0.004`). |
 | `COQUI_TOS_AGREED` | Non-interactive acceptance of Coqui's CPML for the XTTS-v2 checkpoint download. See licensing below. |
 
 ## Security
@@ -326,8 +331,9 @@ valid WAV output).
       `voiceforge-download` compose service, `scripts/e2e_smoke_test.py`
       (CPU e2e verified for openvoice-v2, xtts-v2, f5-tts).
 - [ ] **M6 — Reel Studio integration:** see below.
-- [ ] **M7 — Polish & release:** optional audio watermarking, demo media,
-      GitHub release notes.
+- [x] **M7 — Polish & release:** GitHub CI, structured JSON logging,
+      `/v1/metrics`, enhanced `/healthz`, optional synth watermarking,
+      OpenAPI tag docs (v0.2.0).
 
 ## Reel Studio integration
 
@@ -346,8 +352,8 @@ two services stay independently deployed, connected only over HTTP via
 voiceforge/
 ├── app/
 │   ├── main.py, config.py, db.py, db_models.py, schemas.py, security.py, storage.py
-│   ├── api/          # voices.py, engines.py, synth.py, events.py
-│   ├── engines/       # base.py, registry.py, xtts_v2.py, f5_tts.py, openvoice_v2.py
+│   ├── api/          # voices.py, engines.py, synth.py, events.py, metrics.py
+│   ├── engines/       # base.py, registry.py, xtts_v2.py, f5_tts.py, openvoice_v2.py, rvc.py
 │   └── jobs/          # background processing + SSE event bus
 ├── docker/            # Dockerfile.cpu, Dockerfile.gpu, docker-compose.yml
 ├── scripts/           # download_models.py

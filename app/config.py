@@ -59,6 +59,11 @@ class Settings(BaseSettings):
     rvc_epochs: int = 50
     rvc_batch_size: int = 4
 
+    # M7 polish
+    log_format: str = "text"  # "text" or "json"
+    watermark_enabled: bool = False
+    watermark_strength: float = 0.004
+
     log_level: str = "info"
 
     @property

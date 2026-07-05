@@ -11,6 +11,7 @@ from app.db import get_session
 from app.db_models import Voice, VoiceSample, VoiceStatus, VoiceTier
 from app.engines.registry import UnknownEngineError, get_engine
 from app.jobs.voice_jobs import run_create_voice
+from app.metrics import get_metrics
 from app.schemas import VoiceDetail, VoiceSummary
 from app.security import auth_dependency
 from app.storage import (
@@ -59,7 +60,12 @@ async def _read_upload(file: UploadFile, max_bytes: int) -> bytes:
     return data
 
 
-@router.post("", response_model=VoiceDetail, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=VoiceDetail,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a cloned voice",
+)
 async def create_voice(
     name: str = Form(..., min_length=1, max_length=200),
     engine_id: str = Form(...),
@@ -147,6 +153,7 @@ async def create_voice(
         raise
 
     _spawn(run_create_voice(voice.id, sample_paths, language))
+    get_metrics().inc("voices_created")
 
     return VoiceDetail(**_to_summary(voice).model_dump(), sample_count=len(sample_paths))
 
@@ -248,7 +255,11 @@ async def get_preview(voice_id: str, session: Session = Depends(get_session)):
     return FileResponse(p, media_type="audio/wav")
 
 
-@router.post("/{voice_id}/upgrade", response_model=VoiceDetail)
+@router.post(
+    "/{voice_id}/upgrade",
+    response_model=VoiceDetail,
+    summary="Upgrade voice to high-fidelity tier",
+)
 async def upgrade_voice(
     voice_id: str,
     session: Session = Depends(get_session),

@@ -82,7 +82,7 @@ def download_rvc() -> None:
         return
 
     print("Downloading RVC base models (HuBERT, RMVPE) via worker setup...")
-    subprocess.run(
+    subprocess.run(  # noqa: S603 — trusted paths from config / /opt/rvc-venv
         [str(rvc_python), str(worker), "setup"],
         check=True,
     )

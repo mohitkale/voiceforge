@@ -15,6 +15,7 @@ from app.db_models import Voice, VoiceStatus
 from app.engines.base import EngineError
 from app.engines.registry import get_engine
 from app.jobs.events_bus import VoiceEvent, get_event_bus
+from app.metrics import get_metrics
 from app.security import get_job_limiter
 from app.storage import preview_path
 
@@ -76,15 +77,19 @@ async def run_create_voice(voice_id: str, sample_paths: list[str], language: str
             if preview_bytes:
                 preview_path(voice_id).write_bytes(preview_bytes)
 
+            get_metrics().inc("voices_ready")
+
             await bus.publish(
                 voice_id, VoiceEvent(type="status", message="ready", extra={"status": "ready"})
             )
 
         except EngineError as exc:
+            get_metrics().inc("voices_failed")
             _mark_failed(voice_id, str(exc))
             await _publish_failed(bus, voice_id, str(exc))
         except Exception as exc:  # noqa: BLE001 - never let a bug hang a voice in "processing"
             logger.exception("Unexpected error processing voice %s", voice_id)
+            get_metrics().inc("voices_failed")
             _mark_failed(voice_id, "Internal error while processing this voice")
             await _publish_failed(bus, voice_id, str(exc))
 

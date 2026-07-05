@@ -5,20 +5,47 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 
-from app.api import engines, events, synth, voices
+from app.api import engines, events, metrics, synth, voices
 from app.config import get_settings
 from app.db import init_db
+from app.engines.registry import list_engines
+from app.logging_setup import configure_logging
+from app.middleware import RequestLoggingMiddleware
+from app.schemas import HealthResponse
 from app.security import SecurityHeadersMiddleware
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("voiceforge")
+
+OPENAPI_TAGS = [
+    {
+        "name": "engines",
+        "description": "List registered cloning engines and their capabilities.",
+    },
+    {
+        "name": "voices",
+        "description": "Create, list, upgrade, and manage cloned voices.",
+    },
+    {
+        "name": "events",
+        "description": "Server-Sent Events stream for voice-processing progress.",
+    },
+    {
+        "name": "synthesize",
+        "description": "Generate speech WAV audio from a ready voice.",
+    },
+    {
+        "name": "metrics",
+        "description": "Lightweight in-process counters since service startup.",
+    },
+]
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
-    logging.getLogger().setLevel(settings.log_level.upper())
+    configure_logging(level=settings.log_level, log_format=settings.log_format)
     init_db()
     settings.data_dir.mkdir(parents=True, exist_ok=True)
     settings.models_dir.mkdir(parents=True, exist_ok=True)
@@ -29,36 +56,76 @@ async def lifespan(app: FastAPI):
             "This is fine for pure localhost/dev use only. Set "
             "VOICEFORGE_API_TOKEN before exposing this service beyond localhost."
         )
+    if settings.watermark_enabled:
+        logger.info(
+            "Synth watermarking enabled (strength=%.4f)",
+            settings.watermark_strength,
+        )
     yield
 
 
 app = FastAPI(
     title="VoiceForge",
     description=(
-        "Local-first, open-source, multi-engine voice cloning service. "
-        "See /docs for the full API, and the README for licensing/consent notes."
+        "Local-first, open-source, multi-engine voice cloning service.\n\n"
+        "**Auth:** Bearer token on `/v1/*` when `VOICEFORGE_API_TOKEN` is set.\n\n"
+        "**Engines:** XTTS-v2, F5-TTS, OpenVoice V2 (zero-shot), RVC (high-fidelity).\n\n"
+        "See the project README for licensing, consent, and deployment notes."
     ),
-    version="0.1.0",
+    version="0.2.0",
     lifespan=lifespan,
+    openapi_tags=OPENAPI_TAGS,
 )
 
 _settings = get_settings()
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RequestLoggingMiddleware)
 if _settings.cors_origin_list:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=_settings.cors_origin_list,
         allow_credentials=False,
         allow_methods=["GET", "POST", "DELETE"],
-        allow_headers=["Authorization", "Content-Type"],
+        allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
     )
 
 app.include_router(engines.router)
 app.include_router(voices.router)
 app.include_router(events.router)
 app.include_router(synth.router)
+app.include_router(metrics.router)
 
 
-@app.get("/healthz")
-async def healthz() -> dict:
-    return {"status": "ok", "service": "voiceforge"}
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+        tags=OPENAPI_TAGS,
+    )
+    schema.setdefault("info", {})["license"] = {
+        "name": "MIT",
+        "url": "https://opensource.org/licenses/MIT",
+    }
+    app.openapi_schema = schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi
+
+
+@app.get("/healthz", response_model=HealthResponse, tags=["health"])
+async def healthz() -> HealthResponse:
+    """Liveness probe — no auth required."""
+    engine_list = list_engines()
+    ready = sum(1 for e in engine_list if e.is_ready())
+    return HealthResponse(
+        status="ok",
+        service="voiceforge",
+        version=app.version,
+        engines_ready=ready,
+        engines_total=len(engine_list),
+    )

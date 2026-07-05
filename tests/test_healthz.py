@@ -1,7 +1,12 @@
 def test_healthz_ok(client):
     resp = client.get("/healthz")
     assert resp.status_code == 200
-    assert resp.json()["status"] == "ok"
+    body = resp.json()
+    assert body["status"] == "ok"
+    assert body["service"] == "voiceforge"
+    assert body["version"] == "0.2.0"
+    assert body["enginesTotal"] >= 4
+    assert "enginesReady" in body
 
 
 def test_healthz_requires_no_auth(client, settings, monkeypatch):
