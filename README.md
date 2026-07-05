@@ -97,13 +97,21 @@ docker compose -f docker/docker-compose.yml --profile cpu up --build
 docker compose -f docker/docker-compose.yml --profile gpu up --build
 ```
 
-The first request that touches the XTTS-v2 engine downloads its ~1.9GB
-checkpoint (cached in the `models-cache` Docker volume afterwards). To
-pre-download it instead of waiting on the first API request:
+The first request that touches an ML engine may download large checkpoints
+(cached in the `models-cache` Docker volume afterwards). To pre-download all
+engine models instead of waiting on the first API request:
 
 ```bash
-docker compose -f docker/docker-compose.yml --profile cpu run --rm \
-  voiceforge-cpu python scripts/download_models.py
+docker compose -f docker/docker-compose.yml --profile cpu run --rm voiceforge-download
+```
+
+End-to-end smoke test (service must be running; run from a dev venv):
+
+```bash
+docker compose -f docker/docker-compose.yml --profile cpu up --build -d
+python scripts/e2e_smoke_test.py --engine openvoice-v2
+python scripts/e2e_smoke_test.py --engine xtts-v2
+python scripts/e2e_smoke_test.py --engine f5-tts
 ```
 
 Then:
@@ -133,7 +141,7 @@ Interactive API docs: `http://localhost:8089/docs`.
 |---|---|---|
 | Works on | Any host, incl. a cheap VPS | Host with an NVIDIA GPU + Container Toolkit |
 | XTTS-v2 synthesis | Several seconds per sentence | Sub-second to a few seconds |
-| Verified in this repo's own testing | ✅ Full end-to-end (clone + synthesize) tested | ⚠️ Written and reviewed carefully, but **not** run against a real GPU while building this — no GPU was available. Please verify on your hardware. |
+| Verified in this repo's own testing | ✅ Full e2e (all three engines) via `scripts/e2e_smoke_test.py` | ⚠️ Written and reviewed carefully, but **not** run against a real GPU while building this — no GPU was available. Please verify on your hardware. |
 
 ## API reference
 
@@ -287,9 +295,9 @@ valid WAV output).
       + YourTTS base) behind `CloneEngine`.
 - [ ] **M4 — High-fidelity tier:** RVC training pipeline, SSE
       training-progress events, "upgrade this voice" flow.
-- [x] **M5 — GPU packaging:** `Dockerfile.gpu`, GPU compose profile,
-      model-cache volume (build verified; hardware not available to run it in
-      this environment — see [CPU vs. GPU](#cpu-vs-gpu)).
+- [x] **M5 — Docker hardening:** GPU + CPU images, model-cache volume,
+      `voiceforge-download` compose service, `scripts/e2e_smoke_test.py`
+      (CPU e2e verified for openvoice-v2, xtts-v2, f5-tts).
 - [ ] **M6 — Reel Studio integration:** see below.
 - [ ] **M7 — Polish & release:** optional audio watermarking, demo media,
       GitHub release notes.

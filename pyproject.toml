@@ -13,7 +13,7 @@ dependencies = [
   "sqlmodel==0.0.39",
   "pydantic==2.13.4",
   "pydantic-settings==2.14.2",
-  "aiofiles==25.1.0",
+  "aiofiles==24.1.0",
   "soundfile==0.14.0",
   "numpy==2.4.6",
   "scipy==1.17.1",

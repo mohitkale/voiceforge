@@ -22,6 +22,20 @@ services:
       dockerfile: docker/Dockerfile.cpu
     profiles: ["cpu"]
 
+  # One-shot model pre-download (populates the models-cache volume):
+  #   docker compose -f docker/docker-compose.yml --profile cpu run --rm voiceforge-download
+  voiceforge-download:
+    <<: *common
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.cpu
+    profiles: ["cpu"]
+    restart: "no"
+    ports: []
+    entrypoint: ["python", "scripts/download_models.py"]
+    environment:
+      COQUI_TOS_AGREED: "1"
+
   # GPU profile: `docker compose --profile gpu up voiceforge-gpu`
   # Requires the NVIDIA Container Toolkit on the host.
   voiceforge-gpu:

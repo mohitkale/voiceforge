@@ -34,9 +34,13 @@ logger = logging.getLogger("voiceforge.engines.f5_tts")
 
 F5_MODEL = "F5TTS_v1_Base"
 F5_NATIVE_SAMPLE_RATE = 24000
+_WHISPER_ASR_MODEL = "openai/whisper-large-v3-turbo"
 
 # Base checkpoint is trained on English + Chinese (Emilia dataset).
 SUPPORTED_LANGUAGES = ["en", "zh"]
+
+_asr_processor = None
+_asr_model = None
 
 
 class F5TtsEngine:
@@ -133,7 +137,7 @@ class F5TtsEngine:
                 await on_progress(msg, extra)
 
         await report("loading_model")
-        model = await self._ensure_loaded()
+        await self._ensure_loaded()
 
         ref_source = _pick_reference_sample(sample_paths)
         out_dir = artifacts_dir(voice_id)
@@ -143,9 +147,14 @@ class F5TtsEngine:
 
         await report("transcribing_reference")
         asr_language = _map_asr_language(language)
+        device = self._resolve_device()
 
         def _transcribe() -> str:
-            text = model.transcribe(str(ref_audio), language=asr_language)
+            text = _transcribe_reference_audio(
+                str(ref_audio),
+                language=asr_language,
+                device=device,
+            )
             if not (text or "").strip():
                 raise EngineError(
                     "Could not transcribe the reference audio — F5-TTS needs "
@@ -194,13 +203,15 @@ class F5TtsEngine:
         speed = opts.speed or 1.0
 
         def _synth() -> np.ndarray:
+            import tqdm
+
             wav, _sr, _spec = model.infer(
                 ref_file=str(ref_path),
                 ref_text=ref_text,
                 gen_text=text,
                 speed=speed,
                 show_info=lambda *_args, **_kwargs: None,
-                progress=lambda x: x,
+                progress=tqdm,
             )
             if wav is None:
                 raise EngineError("F5-TTS produced no audio")
@@ -238,3 +249,64 @@ def _map_asr_language(language: str) -> str | None:
         return code
     # Whisper still transcribes other languages; omit hint for best effort.
     return None
+
+
+def _transcribe_reference_audio(
+    ref_path: str,
+    *,
+    language: str | None,
+    device: str,
+) -> str:
+    """Transcribe reference audio without torchcodec (CPU Docker safe).
+
+    F5-TTS's bundled ``model.transcribe`` and the Hugging Face ASR pipeline
+    both route file/chunk loading through torchcodec, which fails on CPU-only
+    images (missing ``libnvrtc.so.*``). Loading with soundfile and calling
+    Whisper directly avoids that dependency.
+    """
+    global _asr_processor, _asr_model
+
+    wav, sr = sf.read(ref_path, dtype="float32", always_2d=False)
+    if getattr(wav, "ndim", 1) > 1:
+        wav = wav.mean(axis=1)
+
+    if sr != 16_000:
+        import torch
+        import torchaudio
+
+        tensor = torchaudio.functional.resample(
+            torch.from_numpy(wav).unsqueeze(0),
+            sr,
+            16_000,
+        )
+        wav = tensor.squeeze(0).numpy()
+        sr = 16_000
+
+    import torch
+    from transformers import WhisperForConditionalGeneration, WhisperProcessor
+
+    if _asr_processor is None or _asr_model is None:
+        logger.info(
+            "Loading Whisper ASR (%s) on device=%s for F5 reference transcription",
+            _WHISPER_ASR_MODEL,
+            device,
+        )
+        _asr_processor = WhisperProcessor.from_pretrained(_WHISPER_ASR_MODEL)
+        _asr_model = WhisperForConditionalGeneration.from_pretrained(_WHISPER_ASR_MODEL)
+        _asr_model.to(device)
+        _asr_model.eval()
+
+    inputs = _asr_processor(wav, sampling_rate=sr, return_tensors="pt")
+    input_features = inputs.input_features.to(device)
+
+    generate_kwargs: dict = {"max_new_tokens": 256}
+    if language:
+        generate_kwargs["forced_decoder_ids"] = _asr_processor.get_decoder_prompt_ids(
+            language=language,
+            task="transcribe",
+        )
+
+    with torch.no_grad():
+        token_ids = _asr_model.generate(input_features, **generate_kwargs)
+
+    return _asr_processor.batch_decode(token_ids, skip_special_tokens=True)[0].strip()

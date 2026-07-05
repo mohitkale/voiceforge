@@ -37,7 +37,6 @@ logger = logging.getLogger("voiceforge.engines.openvoice_v2")
 
 OV_VC_MODEL = "voice_conversion_models/multilingual/multi-dataset/openvoice_v2"
 YOUR_TTS_MODEL = "tts_models/multilingual/multi-dataset/your_tts"
-KOREAN_BASE_MODEL = "tts_models/ko/kss/tacotron2-DDC"
 
 # OpenVoice V2 natively supports these output languages (MyShell docs).
 SUPPORTED_LANGUAGES = ["en", "es", "fr", "zh", "ja", "ko"]
@@ -49,6 +48,9 @@ YOUR_TTS_LANG = {
     "fr": "fr",
     "zh": "zh-cn",
     "ja": "ja",
+    # Korean is not in YourTTS — synthesize with English base; OpenVoice VC
+    # still applies the cloned tone color cross-lingually.
+    "ko": "en",
 }
 
 # OpenVoice V2 checkpoints in coqui-tts use 22.05 kHz audio.
@@ -145,7 +147,7 @@ class OpenVoiceV2Engine:
                 return cached
 
             self._prepare_env()
-            model_name = KOREAN_BASE_MODEL if lang == "ko" else YOUR_TTS_MODEL
+            model_name = YOUR_TTS_MODEL
 
             def _load():
                 from TTS.api import TTS
@@ -306,10 +308,6 @@ def _pick_reference_sample(sample_paths: list[Path]) -> Path:
 def _synthesize_base(base_tts, *, text: str, language: str, out_path: str) -> None:
     """Generate neutral base speech for OpenVoice tone-color conversion."""
     lang = _normalize_language(language)
-    if lang == "ko":
-        base_tts.tts_to_file(text=text, file_path=out_path)
-        return
-
     your_tts_lang = YOUR_TTS_LANG.get(lang)
     if your_tts_lang is None:
         raise EngineError(f"No base TTS mapping for language '{lang}'")

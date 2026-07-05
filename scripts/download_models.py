@@ -53,7 +53,6 @@ def download_openvoice_v2() -> None:
 
     TTS("voice_conversion_models/multilingual/multi-dataset/openvoice_v2")
     TTS("tts_models/multilingual/multi-dataset/your_tts")
-    TTS("tts_models/ko/kss/tacotron2-DDC")
     print(f"Done. Cached under {settings.models_dir}")
 
 
