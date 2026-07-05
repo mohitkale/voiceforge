@@ -11,18 +11,19 @@ dependency on it.
 
 ## Status
 
-This is milestone **M0 + M1** of the project (see [Roadmap](#roadmap)):
+This is milestone **M0 + M1 + M2** of the project (see [Roadmap](#roadmap)):
 
 - Full service scaffold: FastAPI app, SQLite metadata store, bearer-token
   auth, CORS, background job processing, SSE progress events.
 - One fully working, real cloning engine: **XTTS-v2** (zero-shot, instant
   tier) — upload a sample, get a cloned voice, synthesize speech from text.
+- Reference-audio preprocessing on upload (trim silence, high-pass, normalize).
+- Quality benchmark script (`scripts/benchmark_quality.py`) for speaker
+  similarity + optional Whisper WER.
 - CPU and GPU Docker images.
 
-Multi-engine support (F5-TTS, OpenVoice V2), the RVC high-fidelity
-fine-tuning pipeline, and the quality-benchmark script are designed for (see
-the `CloneEngine` interface below) but not yet implemented — see
-[Roadmap](#roadmap).
+Multi-engine support (F5-TTS, OpenVoice V2) and the RVC high-fidelity
+fine-tuning pipeline are not yet implemented — see [Roadmap](#roadmap).
 
 ## Mission & non-negotiables
 
@@ -175,6 +176,7 @@ All settings are environment variables, prefixed `VOICEFORGE_` (see
 | `VOICEFORGE_DATA_DIR` / `VOICEFORGE_MODELS_DIR` | Where samples/DB and model checkpoints live. |
 | `VOICEFORGE_DEVICE` | `cpu`, `cuda`, or `auto`. |
 | `VOICEFORGE_MAX_UPLOAD_MB` / `_MAX_SAMPLES_PER_VOICE` / `_MAX_SYNTH_CHARS` | Abuse/resource-exhaustion limits. |
+| `VOICEFORGE_PREPROCESS_SAMPLES` | Trim/normalize reference uploads before cloning (default: true). |
 | `COQUI_TOS_AGREED` | Non-interactive acceptance of Coqui's CPML for the XTTS-v2 checkpoint download. See licensing below. |
 
 ## Security
@@ -256,6 +258,12 @@ pip install -r requirements-xtts.txt \
 pytest                 # full test suite (mocks the ML engine — no GPU/torch download required)
 ruff check app tests scripts
 pip-audit              # dependency vulnerability scan
+
+# Optional: score a clone (speaker similarity + WER) — needs torch + benchmark extras:
+pip install -e ".[xtts,benchmark]"
+python scripts/benchmark_quality.py \\
+  --reference sample.wav --generated synth.wav \\
+  --text "The sentence that was synthesized."
 ```
 
 Tests never require torch/coqui-tts: a lightweight in-memory `FakeEngine`
@@ -271,8 +279,8 @@ valid WAV output).
       CPU image, engine registry, README.
 - [x] **M1 — MVP clone (XTTS-v2):** upload/record → instant zero-shot voice
       → `/synthesize` returns WAV. Manually + automatically verified.
-- [ ] **M2 — Quality benchmarking:** `scripts/benchmark_quality.py`
-      (speaker-similarity + WER), reference-audio preprocessing.
+- [x] **M2 — Quality benchmarking:** `scripts/benchmark_quality.py`
+      (speaker-similarity + WER), reference-audio preprocessing on upload.
 - [ ] **M3 — Multi-engine:** F5-TTS and OpenVoice V2 behind the same
       interface.
 - [ ] **M4 — High-fidelity tier:** RVC training pipeline, SSE

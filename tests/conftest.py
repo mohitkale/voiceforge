@@ -76,7 +76,8 @@ engine_registry._FACTORIES.setdefault("failing-engine", FailingEngine)
 
 
 def make_wav_bytes(duration_seconds: float = 3.0, sample_rate: int = 22050) -> bytes:
-    samples = np.zeros(int(duration_seconds * sample_rate), dtype=np.float32)
+    t = np.arange(int(duration_seconds * sample_rate), dtype=np.float32) / sample_rate
+    samples = (0.4 * np.sin(2 * np.pi * 440 * t)).astype(np.float32)
     buf = io.BytesIO()
     sf.write(buf, samples, samplerate=sample_rate, subtype="PCM_16", format="WAV")
     return buf.getvalue()

@@ -16,6 +16,7 @@ dependencies = [
   "aiofiles==25.1.0",
   "soundfile==0.14.0",
   "numpy==2.4.6",
+  "scipy==1.17.1",
   "python-dotenv==1.2.2",
 ]
 
@@ -42,6 +43,12 @@ dev = [
   "httpx==0.28.1",
   "ruff==0.15.20",
   "pip-audit==2.10.1",
+]
+# Quality benchmarking (scripts/benchmark_quality.py). Requires torch — install
+# the `xtts` extra first, or run inside the Docker image.
+benchmark = [
+  "resemblyzer==0.1.4",
+  "openai-whisper==20250625",
 ]
 
 [tool.ruff]

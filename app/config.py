@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     # protects CPU-only / small-GPU hosts from being overwhelmed.
     max_concurrent_jobs: int = 1
 
+    # Trim silence / normalize reference uploads before cloning (M2).
+    preprocess_samples: bool = True
+
     log_level: str = "info"
 
     @property

@@ -13,11 +13,14 @@ from pathlib import Path
 
 import soundfile as sf
 
+from app.audio_preprocess import preprocess_reference_audio
 from app.config import get_settings
 
 # Real audio-content sniffing (via libsndfile through `soundfile`) rather
 # than trusting the client's Content-Type header or file extension.
 ALLOWED_SUFFIXES = {".wav", ".mp3", ".flac", ".ogg", ".m4a", ".aac", ".webm"}
+# Resampling/trim can shave a few ms off nominal clip length.
+_DURATION_TOLERANCE_S = 0.05
 
 
 class InvalidAudioError(ValueError):
@@ -96,7 +99,7 @@ def save_and_validate_sample(
             raise InvalidAudioError("Audio file has no samples")
 
         duration = info.frames / info.samplerate
-        if duration < settings.min_sample_seconds:
+        if duration < settings.min_sample_seconds - _DURATION_TOLERANCE_S:
             raise InvalidAudioError(
                 f"Sample too short ({duration:.1f}s) — need at least "
                 f"{settings.min_sample_seconds:.0f}s"
@@ -106,6 +109,19 @@ def save_and_validate_sample(
                 f"Sample too long ({duration:.1f}s) — max is "
                 f"{settings.max_sample_seconds:.0f}s"
             )
+
+        if settings.preprocess_samples:
+            try:
+                result = preprocess_reference_audio(str(tmp))
+            except Exception as exc:  # noqa: BLE001
+                raise InvalidAudioError(f"Could not preprocess audio: {exc}") from exc
+            info = sf.info(str(tmp))
+            duration = result.duration_seconds
+            if duration < settings.min_sample_seconds - _DURATION_TOLERANCE_S:
+                raise InvalidAudioError(
+                    f"Sample too short after preprocessing ({duration:.1f}s) — need at least "
+                    f"{settings.min_sample_seconds:.0f}s"
+                )
 
         tmp.replace(dest)
     finally:
