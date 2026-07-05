@@ -11,19 +11,20 @@ dependency on it.
 
 ## Status
 
-This is milestone **M0 + M1 + M2 + M3a** of the project (see [Roadmap](#roadmap)):
+This is milestone **M0 + M1 + M2 + M3a + M3b** of the project (see [Roadmap](#roadmap)):
 
 - Full service scaffold: FastAPI app, SQLite metadata store, bearer-token
   auth, CORS, background job processing, SSE progress events.
-- Two zero-shot cloning engines: **XTTS-v2** (Coqui, CPML) and **F5-TTS**
-  (SWivid, Apache-2.0/CC) — pick per voice via `engine_id`.
+- Three zero-shot cloning engines: **XTTS-v2** (Coqui, CPML), **F5-TTS**
+  (SWivid, Apache-2.0/CC), and **OpenVoice V2** (MyShell, MIT) — pick per
+  voice via `engine_id`.
 - Reference-audio preprocessing on upload (trim silence, high-pass, normalize).
 - Quality benchmark script (`scripts/benchmark_quality.py`) for speaker
   similarity + optional Whisper WER.
 - CPU and GPU Docker images.
 
-OpenVoice V2 and the RVC high-fidelity fine-tuning pipeline are not yet
-implemented — see [Roadmap](#roadmap).
+The RVC high-fidelity fine-tuning pipeline is not yet implemented — see
+[Roadmap](#roadmap).
 
 ## Mission & non-negotiables
 
@@ -51,8 +52,8 @@ implemented — see [Roadmap](#roadmap).
                                                           │  └──────────┬────────────┘  │
                                                           │             │               │
                                                           │             ▼               │
-                                                          │          XTTS-v2             │
-                                                          │   (more engines: see roadmap)│
+                                                          │          XTTS-v2, F5-TTS,   │
+                                                          │          OpenVoice V2       │
                                                           │                             │
                                                           │  SQLite (voice metadata)     │
                                                           │  data/ (samples, artifacts)  │
@@ -238,9 +239,8 @@ compliance requirement, upgrade to `torch>=2.9`/`2.10` and add the
   - `GET /v1/engines` reports each engine's `license` field so any client
     (including Reel Studio) can surface it to the end user.
   - **Do not** use the XTTS-v2 engine in this service for any commercial
-    purpose. If you need a permissively-licensed engine, see the roadmap
-    (F5-TTS / OpenVoice V2 are Apache-2.0 / MIT respectively) — not yet
-    implemented in this milestone.
+    purpose. If you need a permissively-licensed engine, use **F5-TTS**
+    (Apache-2.0/CC) or **OpenVoice V2** (MIT) via `engine_id`.
 - Consider this a **voice-cloning tool that can produce convincing fake
   audio of real people.** Only clone voices you have the right to clone.
 
@@ -283,7 +283,8 @@ valid WAV output).
       (speaker-similarity + WER), reference-audio preprocessing on upload.
 - [x] **M3a — F5-TTS engine:** permissive-license zero-shot engine behind
       `CloneEngine`.
-- [ ] **M3b — OpenVoice V2** behind the same interface.
+- [x] **M3b — OpenVoice V2 engine:** MIT-licensed zero-shot engine (Coqui VC
+      + YourTTS base) behind `CloneEngine`.
 - [ ] **M4 — High-fidelity tier:** RVC training pipeline, SSE
       training-progress events, "upgrade this voice" flow.
 - [x] **M5 — GPU packaging:** `Dockerfile.gpu`, GPU compose profile,
@@ -311,7 +312,7 @@ voiceforge/
 ├── app/
 │   ├── main.py, config.py, db.py, db_models.py, schemas.py, security.py, storage.py
 │   ├── api/          # voices.py, engines.py, synth.py, events.py
-│   ├── engines/       # base.py (CloneEngine), registry.py, xtts_v2.py
+│   ├── engines/       # base.py, registry.py, xtts_v2.py, f5_tts.py, openvoice_v2.py
 │   └── jobs/          # background processing + SSE event bus
 ├── docker/            # Dockerfile.cpu, Dockerfile.gpu, docker-compose.yml
 ├── scripts/           # download_models.py

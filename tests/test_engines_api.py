@@ -6,6 +6,16 @@ def test_list_engines_includes_built_in_ids(client):
     ids = {e["id"] for e in resp.json()}
     assert "xtts-v2" in ids
     assert "f5-tts" in ids
+    assert "openvoice-v2" in ids
+
+
+def test_openvoice_engine_metadata(client):
+    resp = client.get("/v1/engines")
+    ov = next(e for e in resp.json() if e["id"] == "openvoice-v2")
+    assert ov["label"].startswith("OpenVoice V2")
+    assert ov["capabilities"]["zero_shot"] is True
+    assert "MIT" in ov["capabilities"]["license"]
+    assert "ko" in ov["capabilities"]["languages"]
 
 
 def test_f5_engine_metadata(client):

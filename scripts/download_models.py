@@ -43,9 +43,24 @@ def download_f5_tts() -> None:
     print(f"Done. Cached under {settings.models_dir}")
 
 
+def download_openvoice_v2() -> None:
+    settings = get_settings()
+    settings.models_dir.mkdir(parents=True, exist_ok=True)
+    os.environ.setdefault("TTS_HOME", str(settings.models_dir))
+
+    print("Downloading OpenVoice V2 VC + YourTTS base (MIT)...")
+    from TTS.api import TTS
+
+    TTS("voice_conversion_models/multilingual/multi-dataset/openvoice_v2")
+    TTS("tts_models/multilingual/multi-dataset/your_tts")
+    TTS("tts_models/ko/kss/tacotron2-DDC")
+    print(f"Done. Cached under {settings.models_dir}")
+
+
 ENGINES = {
     "xtts-v2": download_xtts_v2,
     "f5-tts": download_f5_tts,
+    "openvoice-v2": download_openvoice_v2,
 }
 
 

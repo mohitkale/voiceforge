@@ -1,0 +1,5 @@
+# OpenVoice V2 engine dependencies.
+#
+# This engine uses coqui-tts's bundled OpenVoice V2 voice-conversion checkpoint.
+# Install requirements-xtts.txt (torch + coqui-tts + transformers) — no
+# additional packages are required beyond that stack.

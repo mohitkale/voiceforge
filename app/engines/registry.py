@@ -11,11 +11,13 @@ from collections.abc import Callable
 
 from app.engines.base import CloneEngine
 from app.engines.f5_tts import F5TtsEngine
+from app.engines.openvoice_v2 import OpenVoiceV2Engine
 from app.engines.xtts_v2 import XttsV2Engine
 
 _FACTORIES: dict[str, Callable[[], CloneEngine]] = {
     "xtts-v2": XttsV2Engine,
     "f5-tts": F5TtsEngine,
+    "openvoice-v2": OpenVoiceV2Engine,
 }
 
 _instances: dict[str, CloneEngine] = {}
