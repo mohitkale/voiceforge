@@ -16,6 +16,7 @@ from app.engines.base import EngineError
 from app.engines.registry import get_engine
 from app.jobs.events_bus import VoiceEvent, get_event_bus
 from app.metrics import get_metrics
+from app.persistence import commit_data_volume
 from app.security import get_job_limiter
 from app.storage import preview_path
 
@@ -76,6 +77,7 @@ async def run_create_voice(voice_id: str, sample_paths: list[str], language: str
 
             if preview_bytes:
                 preview_path(voice_id).write_bytes(preview_bytes)
+            commit_data_volume()
 
             get_metrics().inc("voices_ready")
 
@@ -109,3 +111,4 @@ def _mark_failed(voice_id: str, message: str) -> None:
         voice.updated_at = datetime.now(UTC)
         session.add(voice)
         session.commit()
+    commit_data_volume()

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from app.config import get_settings
 from app.engines.base import CloneEngine
 from app.engines.chatterbox import ChatterboxEngine
 from app.engines.cosyvoice_3 import CosyVoice3Engine
@@ -39,9 +40,16 @@ class UnknownEngineError(KeyError):
     pass
 
 
-def get_engine(engine_id: str) -> CloneEngine:
+def is_engine_enabled(engine_id: str) -> bool:
     if engine_id not in _FACTORIES:
-        raise UnknownEngineError(engine_id)
+        return False
+    allowed = get_settings().enabled_engine_ids
+    if allowed is None:
+        return True
+    return engine_id in allowed
+
+
+def _get_engine_instance(engine_id: str) -> CloneEngine:
     instance = _instances.get(engine_id)
     if instance is None:
         instance = _FACTORIES[engine_id]()
@@ -49,8 +57,17 @@ def get_engine(engine_id: str) -> CloneEngine:
     return instance
 
 
+def get_engine(engine_id: str) -> CloneEngine:
+    if engine_id not in _FACTORIES:
+        raise UnknownEngineError(engine_id)
+    if not is_engine_enabled(engine_id):
+        raise UnknownEngineError(engine_id)
+    return _get_engine_instance(engine_id)
+
+
 def list_engines() -> list[CloneEngine]:
-    return [get_engine(engine_id) for engine_id in _FACTORIES]
+    """All registered engines (for API/UI listing)."""
+    return [_get_engine_instance(engine_id) for engine_id in _FACTORIES]
 
 
 def engine_ids() -> list[str]:

@@ -92,6 +92,11 @@ class OpenVoiceV2Engine:
         except Exception:
             return "cpu"
 
+    def _use_gpu(self) -> bool:
+        """Coqui-TTS still needs ``gpu=True`` at construction — ``.to('cuda')``
+        alone leaves YourTTS speaker encoders on CPU (idiap/coqui-tts #4398)."""
+        return self._resolve_device().startswith("cuda")
+
     def is_ready(self) -> bool:
         if self._vc is not None:
             return True
@@ -124,12 +129,15 @@ class OpenVoiceV2Engine:
                         "'xtts' extra (torch + coqui-tts) or use the Docker image."
                     ) from exc
                 device = self._resolve_device()
+                gpu = self._use_gpu()
                 logger.info(
-                    "Loading OpenVoice V2 VC (%s) on device=%s",
+                    "Loading OpenVoice V2 VC (%s) on device=%s gpu=%s",
                     OV_VC_MODEL,
                     device,
+                    gpu,
                 )
-                return TTS(OV_VC_MODEL).to(device)
+                tts = TTS(OV_VC_MODEL, gpu=gpu)
+                return tts.to(device) if gpu else tts
 
             loop = asyncio.get_running_loop()
             self._vc = await loop.run_in_executor(None, _load)
@@ -153,13 +161,16 @@ class OpenVoiceV2Engine:
                 from TTS.api import TTS
 
                 device = self._resolve_device()
+                gpu = self._use_gpu()
                 logger.info(
-                    "Loading OpenVoice base TTS (%s) for language=%s on device=%s",
+                    "Loading OpenVoice base TTS (%s) for language=%s on device=%s gpu=%s",
                     model_name,
                     lang,
                     device,
+                    gpu,
                 )
-                return TTS(model_name).to(device)
+                tts = TTS(model_name, gpu=gpu)
+                return tts.to(device) if gpu else tts
 
             loop = asyncio.get_running_loop()
             tts = await loop.run_in_executor(None, _load)
@@ -256,7 +267,14 @@ class OpenVoiceV2Engine:
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
                 src_path = tmp.name
             try:
-                _synthesize_base(base_tts, text=text, language=language, out_path=src_path)
+                use_gpu = self._use_gpu()
+                _synthesize_base(
+                    base_tts,
+                    text=text,
+                    language=language,
+                    out_path=src_path,
+                    gpu=use_gpu,
+                )
                 wav = vc.voice_conversion(
                     source_wav=src_path,
                     speaker=speaker_id,
@@ -305,7 +323,14 @@ def _pick_reference_sample(sample_paths: list[Path]) -> Path:
     return best
 
 
-def _synthesize_base(base_tts, *, text: str, language: str, out_path: str) -> None:
+def _synthesize_base(
+    base_tts,
+    *,
+    text: str,
+    language: str,
+    out_path: str,
+    gpu: bool = False,
+) -> None:
     """Generate neutral base speech for OpenVoice tone-color conversion."""
     lang = _normalize_language(language)
     your_tts_lang = YOUR_TTS_LANG.get(lang)
@@ -320,4 +345,5 @@ def _synthesize_base(base_tts, *, text: str, language: str, out_path: str) -> No
         speaker=speakers[0],
         language=your_tts_lang,
         file_path=out_path,
+        gpu=gpu,
     )

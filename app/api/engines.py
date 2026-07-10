@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
-from app.engines.registry import list_engines
+from app.engine_readiness import is_engine_ready_cached
+from app.engines.registry import is_engine_enabled, list_engines
 from app.schemas import EngineStatus
 from app.security import auth_dependency
 
@@ -16,8 +17,8 @@ async def get_engines() -> list[EngineStatus]:
             id=e.id,
             label=e.label,
             capabilities=e.capabilities,
-            ready=e.is_ready(),
-            configured=True,
+            ready=is_engine_ready_cached(e.id),
+            configured=is_engine_enabled(e.id),
         )
         for e in list_engines()
     ]

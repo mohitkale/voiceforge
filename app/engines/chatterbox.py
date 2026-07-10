@@ -25,7 +25,8 @@ from app.engines.base import (
     VoiceArtifact,
 )
 from app.engines.wav_output import to_wav_bytes
-from app.engines.worker_client import ping_worker, run_worker
+from app.engines.chatterbox_daemon import synthesize_via_daemon
+from app.engines.worker_client import ping_worker
 from app.storage import artifacts_dir
 
 logger = logging.getLogger("voiceforge.engines.chatterbox")
@@ -143,24 +144,11 @@ class ChatterboxEngine:
             raise EngineError("Cached reference audio is missing on disk")
 
         out_wav = artifacts_dir(voice_id) / "chatterbox_last.wav"
-        device = self._resolve_device()
 
-        await run_worker(
-            python=python,
-            script=_WORKER_SCRIPT,
-            args=[
-                "synthesize",
-                "--ref-audio",
-                str(ref_path),
-                "--text",
-                text,
-                "--output",
-                str(out_wav),
-                "--device",
-                device,
-            ],
-            label="chatterbox",
-            timeout_s=1800.0,
+        await synthesize_via_daemon(
+            ref_audio=ref_path,
+            text=text,
+            output=out_wav,
         )
 
         if not out_wav.is_file():

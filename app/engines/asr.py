@@ -101,3 +101,19 @@ def transcribe_reference_audio(
         token_ids = _asr_model.generate(input_features, **generate_kwargs)
 
     return _asr_processor.batch_decode(token_ids, skip_special_tokens=True)[0].strip()
+
+
+def release_asr_model() -> None:
+    """Drop cached Whisper weights to free GPU memory for TTS models."""
+    global _asr_processor, _asr_model
+    if _asr_model is not None:
+        try:
+            import torch
+
+            _asr_model.to("cpu")
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        except Exception:
+            pass
+    _asr_processor = None
+    _asr_model = None

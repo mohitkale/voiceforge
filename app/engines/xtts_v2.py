@@ -118,12 +118,15 @@ class XttsV2Engine:
                         "'xtts' extra (torch + coqui-tts) or use the Docker image."
                     ) from exc
                 device = self._resolve_device()
+                gpu = device.startswith("cuda")
                 logger.info(
-                    "Loading XTTS-v2 onto device=%s (first run may download "
+                    "Loading XTTS-v2 onto device=%s gpu=%s (first run may download "
                     "the ~2GB checkpoint)",
                     device,
+                    gpu,
                 )
-                return TTS(XTTS_MODEL_NAME).to(device)
+                tts = TTS(XTTS_MODEL_NAME, gpu=gpu)
+                return tts.to(device) if gpu else tts
 
             loop = asyncio.get_running_loop()
             self._tts = await loop.run_in_executor(None, _load)
@@ -211,12 +214,15 @@ class XttsV2Engine:
             # pickled objects/code execution on load.
             cached = torch.load(latents_path, weights_only=True)
             model = tts.synthesizer.tts_model
+            device = next(model.parameters()).device
+            gpt_cond = cached["gpt_cond_latent"].to(device)
+            spk_emb = cached["speaker_embedding"].to(device)
             with torch.no_grad():
                 out = model.inference(
                     text=text,
                     language=language,
-                    gpt_cond_latent=cached["gpt_cond_latent"],
-                    speaker_embedding=cached["speaker_embedding"],
+                    gpt_cond_latent=gpt_cond,
+                    speaker_embedding=spk_emb,
                     speed=speed,
                     enable_text_splitting=True,
                 )

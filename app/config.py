@@ -68,6 +68,12 @@ class Settings(BaseSettings):
     indextts_python: Path | None = None
     chatterbox_python: Path | None = None
 
+    # Comma-separated engine ids to enable for clone/synth in this deployment.
+    enabled_engines: str = ""
+
+    # Comma-separated engine ids to preload at startup (Modal: qwen3-tts).
+    warmup_engines: str = ""
+
     # M7 polish
     log_format: str = "text"  # "text" or "json"
     watermark_enabled: bool = False
@@ -86,6 +92,15 @@ class Settings(BaseSettings):
     @property
     def voices_dir(self) -> Path:
         return self.data_dir / "voices"
+
+    @property
+    def enabled_engine_ids(self) -> set[str] | None:
+        ids = {e.strip() for e in self.enabled_engines.split(",") if e.strip()}
+        return ids or None
+
+    @property
+    def warmup_engine_ids(self) -> list[str]:
+        return [e.strip() for e in self.warmup_engines.split(",") if e.strip()]
 
 
 @lru_cache

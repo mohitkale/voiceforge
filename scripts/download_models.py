@@ -59,7 +59,6 @@ def download_openvoice_v2() -> None:
 
 def download_rvc() -> None:
     """Pre-fetch RVC base weights (HuBERT, RMVPE) via the isolated worker."""
-    import shutil
     import subprocess
 
     settings = get_settings()
@@ -69,9 +68,6 @@ def download_rvc() -> None:
     if rvc_python is None:
         default = Path("/opt/rvc-venv/bin/python")
         rvc_python = default if default.is_file() else None
-    if rvc_python is None:
-        found = shutil.which("python3")
-        rvc_python = Path(found) if found else None
 
     worker = Path(__file__).resolve().parent / "rvc_worker.py"
     if rvc_python is None or not worker.is_file():

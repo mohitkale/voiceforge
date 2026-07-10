@@ -13,7 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from app.api import engines, events, metrics, synth, voices
 from app.config import get_settings
 from app.db import init_db
-from app.engines.registry import list_engines
+from app.engine_readiness import get_health_counts, refresh_readiness, start_warmup
 from app.logging_setup import configure_logging
 from app.middleware import RequestLoggingMiddleware
 from app.schemas import HealthResponse
@@ -66,6 +66,8 @@ async def lifespan(app: FastAPI):
             "Synth watermarking enabled (strength=%.4f)",
             settings.watermark_strength,
         )
+    refresh_readiness()
+    await start_warmup(settings.warmup_engine_ids)
     yield
 
 
@@ -137,12 +139,11 @@ async def studio_ui() -> FileResponse:
 @app.get("/healthz", response_model=HealthResponse, tags=["health"])
 async def healthz() -> HealthResponse:
     """Liveness probe — no auth required."""
-    engine_list = list_engines()
-    ready = sum(1 for e in engine_list if e.is_ready())
+    ready, total = get_health_counts()
     return HealthResponse(
         status="ok",
         service="voiceforge",
         version=app.version,
         engines_ready=ready,
-        engines_total=len(engine_list),
+        engines_total=total,
     )

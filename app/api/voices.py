@@ -12,6 +12,7 @@ from app.db_models import Voice, VoiceSample, VoiceStatus, VoiceTier
 from app.engines.registry import UnknownEngineError, get_engine
 from app.jobs.voice_jobs import run_create_voice
 from app.metrics import get_metrics
+from app.persistence import commit_data_volume
 from app.schemas import VoiceDetail, VoiceSummary
 from app.security import auth_dependency
 from app.storage import (
@@ -152,6 +153,7 @@ async def create_voice(
         delete_voice_dir(voice.id)
         raise
 
+    commit_data_volume()
     _spawn(run_create_voice(voice.id, sample_paths, language))
     get_metrics().inc("voices_created")
 

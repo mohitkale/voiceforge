@@ -12,6 +12,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from app.engines.base import EngineError, ProgressFn
+from app.engines.subprocess_env import sanitized_subprocess_env, worker_exec_command
 
 logger = logging.getLogger("voiceforge.engines.worker_client")
 
@@ -30,13 +31,14 @@ async def run_worker(
     if not script.is_file():
         raise EngineError(f"{label} worker script not found: {script}")
 
-    cmd = [str(python), str(script), *args]
+    cmd = worker_exec_command(python, script, args)
     logger.info("Starting %s worker: %s", label, " ".join(cmd))
 
     proc = await asyncio.create_subprocess_exec(
         *cmd,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
+        env=sanitized_subprocess_env(),
     )
 
     async def _read_stdout() -> str:
@@ -84,11 +86,10 @@ async def run_worker(
 async def ping_worker(*, python: Path, script: Path, label: str) -> bool:
     try:
         proc = await asyncio.create_subprocess_exec(
-            str(python),
-            str(script),
-            "ping",
+            *worker_exec_command(python, script, ["ping"]),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
+            env=sanitized_subprocess_env(),
         )
         stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=30.0)
         return proc.returncode == 0 and b"ok" in (stdout or b"")

@@ -15,6 +15,7 @@ from pathlib import Path
 
 from app.config import get_settings
 from app.engines.base import EngineError, ProgressFn
+from app.engines.subprocess_env import sanitized_subprocess_env, worker_exec_command
 
 logger = logging.getLogger("voiceforge.engines.rvc_worker")
 
@@ -42,11 +43,10 @@ async def ping_worker() -> bool:
         return False
     try:
         proc = await asyncio.create_subprocess_exec(
-            str(python),
-            str(_WORKER_SCRIPT),
-            "ping",
+            *worker_exec_command(python, _WORKER_SCRIPT, ["ping"]),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
+            env=sanitized_subprocess_env(),
         )
         stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=30.0)
         return proc.returncode == 0 and b"ok" in (stdout or b"")
@@ -68,13 +68,14 @@ async def _run_worker(
             "interpreter with rvc-python installed (see README / GPU Docker image)"
         )
 
-    cmd = [str(python), str(_WORKER_SCRIPT), *args]
+    cmd = worker_exec_command(python, _WORKER_SCRIPT, args)
     logger.info("Starting RVC worker: %s", " ".join(cmd))
 
     proc = await asyncio.create_subprocess_exec(
         *cmd,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
+        env=sanitized_subprocess_env(),
     )
 
     async def _read_stdout() -> str:

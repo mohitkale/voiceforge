@@ -18,7 +18,12 @@ from pathlib import Path
 import numpy as np
 
 from app.config import get_settings
-from app.engines.asr import map_asr_language, pick_longest_sample, transcribe_reference_audio
+from app.engines.asr import (
+    map_asr_language,
+    pick_longest_sample,
+    release_asr_model,
+    transcribe_reference_audio,
+)
 from app.engines.base import (
     CloneCapabilities,
     EngineError,
@@ -132,9 +137,6 @@ class F5TtsEngine:
             if on_progress:
                 await on_progress(msg, extra)
 
-        await report("loading_model")
-        await self._ensure_loaded()
-
         await report("caching_reference")
         ref_source = pick_longest_sample(sample_paths)
         out_dir = artifacts_dir(voice_id)
@@ -144,13 +146,13 @@ class F5TtsEngine:
 
         await report("transcribing_reference")
         asr_language = map_asr_language(language, {"en", "zh"})
-        device = self._resolve_device()
 
         def _transcribe() -> str:
+            # CPU ASR avoids T4 VRAM contention with F5-TTS on CUDA.
             text = transcribe_reference_audio(
                 str(ref_audio),
                 language=asr_language,
-                device=device,
+                device="cpu",
             )
             if not (text or "").strip():
                 raise EngineError(
@@ -166,6 +168,11 @@ class F5TtsEngine:
             raise
         except Exception as exc:
             raise EngineError(f"Reference transcription failed: {exc}") from exc
+        finally:
+            release_asr_model()
+
+        await report("loading_model")
+        await self._ensure_loaded()
 
         await report("done")
         settings = get_settings()

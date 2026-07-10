@@ -23,9 +23,8 @@ client (e.g. Reel Studio); this repo is the cloning API.
 - CPU and GPU Docker images; model pre-download + e2e smoke tests.
 
 **CPU tip:** OpenVoice is the lightest zero-shot path. XTTS / F5 / Qwen3 /
-Chatterbox / CosyVoice / IndexTTS / RVC are much happier on a GPU session
-(Lightning AI, RunPod, etc.) — see
-[Deploy on Lightning AI / GPU clouds](#deploy-on-lightning-ai--gpu-clouds).
+Chatterbox / CosyVoice / IndexTTS / RVC are much happier on a GPU session —
+see [GPU cloud deployment](#gpu-cloud-deployment).
 
 Fish Speech talks to a **local** fish-speech HTTP sidecar
 (`VOICEFORGE_FISH_SPEECH_URL`) — not the Fish Audio cloud API.
@@ -230,6 +229,10 @@ All settings are environment variables, prefixed `VOICEFORGE_` (see
 | `VOICEFORGE_FISH_SPEECH_URL` | Local Fish Speech open-weights API base URL (e.g. `http://127.0.0.1:8080`). |
 | `VOICEFORGE_COSYVOICE_PYTHON` | CosyVoice 3 worker interpreter (default `/opt/cosyvoice-venv/bin/python`). |
 | `VOICEFORGE_INDEXTTS_PYTHON` | IndexTTS2 worker interpreter (default `/opt/indextts-venv/bin/python`). |
+| `VOICEFORGE_CHATTERBOX_PYTHON` | Chatterbox worker interpreter (default `/opt/chatterbox-venv/bin/python`). |
+| `VOICEFORGE_ENABLED_ENGINES` | Comma-separated engine ids enabled for clone/synth (empty = all). Modal sets via `MODAL_ENABLED_ENGINES`. |
+| `VOICEFORGE_WARMUP_ENGINES` | Comma-separated ids to preload at startup (e.g. `qwen3-tts,chatterbox`). |
+| `VOICEFORGE_MODAL_DATA_VOLUME` | Modal volume name to commit after voice writes (Modal deploy only). |
 | `VOICEFORGE_LOG_FORMAT` | `text` (default) or `json` for structured log lines. |
 | `VOICEFORGE_WATERMARK_ENABLED` | Mix a quiet voice-specific fingerprint into synth output (default: false). |
 | `VOICEFORGE_WATERMARK_STRENGTH` | Watermark amplitude 0–1 (default: `0.004`). |
@@ -639,10 +642,49 @@ Reference existing providers: `kokoro-server.ts`, `cartesia.ts`, `elevenlabs.ts`
 
 ---
 
-## Deploy on Lightning AI / GPU clouds
+## GPU cloud deployment
+
+Host VoiceForge on free/low-cost GPU platforms for faster engines and a public
+URL (e.g. for Reel Studio). **Your laptop only needs the Modal CLI or a
+browser** — inference runs in the cloud.
+
+| Platform | Public URL | Reel Studio | Guide |
+|----------|------------|-------------|-------|
+| **Modal.com** | Yes (automatic) | Yes | [docs/deploy-modal.md](docs/deploy-modal.md) |
+| **Lightning.ai** | Yes (port proxy) | Yes | [docs/deploy-lightning.md](docs/deploy-lightning.md) |
+| **Kaggle** | No (notebooks only) | No | [docs/deploy-kaggle.md](docs/deploy-kaggle.md) |
+
+**Local Python / PATH issues** (Modal CLI, dev venv): [docs/local-python-setup.md](docs/local-python-setup.md)
+
+Quick Modal path (after [Python setup](docs/local-python-setup.md)):
+
+```bash
+cd audio-cloning && source .venv/bin/activate   # see docs/local-python-setup.md
+pip install 'cbor2>=5.9.0' modal && modal setup
+modal secret create voiceforge-secrets VOICEFORGE_API_TOKEN="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
+modal deploy modal_app.py
+modal run modal_app.py::download_models
+# Open the URL printed by `modal deploy` — VoiceForge Studio + /docs
+```
+
+Point Reel Studio at the hosted URL:
+
+```bash
+VOICEFORGE_SERVICE_URL=https://your-workspace--voiceforge-web.modal.run
+VOICEFORGE_API_TOKEN=<same token as Modal secret>
+```
+
+Each platform guide includes a **troubleshooting log** section for known issues
+and workarounds — update those docs when you hit platform-specific failures.
+
+---
+
+## Deploy on Lightning AI / GPU clouds (summary)
+
+Full step-by-step: **[docs/deploy-lightning.md](docs/deploy-lightning.md)**.
 
 VoiceForge is a normal Docker/HTTP service — it fits session-based GPU
-providers (Lightning AI, RunPod, Vast, etc.) the same way as any FastAPI app.
+providers the same way as any FastAPI app.
 
 ### Recommended setup on Lightning AI
 
@@ -708,7 +750,11 @@ voiceforge/
 │   │                  # chatterbox, qwen3, fish, cosyvoice, indextts)
 │   ├── static/        # Docker-hosted Studio UI (http://localhost:8089/)
 │   └── jobs/          # background processing + SSE event bus
-├── docs/              # architecture.svg, clone-flow.svg
+├── docs/              # architecture.svg, clone-flow.svg, deployment guides
+│   ├── deploy-modal.md
+│   ├── deploy-kaggle.md
+│   ├── deploy-lightning.md
+│   └── local-python-setup.md
 ├── docker/            # Dockerfile.cpu, Dockerfile.gpu, docker-compose.yml
 ├── scripts/           # download_models.py, *_worker.py, e2e_smoke_test.py
 ├── tests/
