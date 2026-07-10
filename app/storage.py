@@ -18,6 +18,8 @@ from app.config import get_settings
 
 # Real audio-content sniffing (via libsndfile through `soundfile`) rather
 # than trusting the client's Content-Type header or file extension.
+# Note: `.webm` is listed for API friendliness, but libsndfile cannot decode
+# browser MediaRecorder Opus/WebM — clients should upload WAV/FLAC/OGG/MP3.
 ALLOWED_SUFFIXES = {".wav", ".mp3", ".flac", ".ogg", ".m4a", ".aac", ".webm"}
 # Resampling/trim can shave a few ms off nominal clip length.
 _DURATION_TOLERANCE_S = 0.05
@@ -93,7 +95,13 @@ def save_and_validate_sample(
         try:
             info = sf.info(str(tmp))
         except Exception as exc:  # noqa: BLE001 - normalize any decode failure
-            raise InvalidAudioError("File is not readable audio") from exc
+            hint = ""
+            if _safe_suffix(original_filename) == ".webm":
+                hint = (
+                    " (browser WebM/Opus is not supported by libsndfile — "
+                    "upload WAV, FLAC, OGG, or MP3 instead)"
+                )
+            raise InvalidAudioError(f"File is not readable audio{hint}") from exc
 
         if info.frames <= 0 or info.samplerate <= 0:
             raise InvalidAudioError("Audio file has no samples")

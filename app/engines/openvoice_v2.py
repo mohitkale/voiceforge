@@ -67,7 +67,7 @@ class OpenVoiceV2Engine:
         recommended_sample_seconds=8.0,
         languages=SUPPORTED_LANGUAGES,
         requires_gpu=False,
-        license="MIT (OpenVoice V2 model weights — commercial use allowed)",
+        license="MIT (OpenVoice V2 VC) + YourTTS base (verify Coqui model card)",
         approx_vram_gb=2.0,
     )
 
