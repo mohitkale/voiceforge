@@ -59,6 +59,15 @@ class Settings(BaseSettings):
     rvc_epochs: int = 50
     rvc_batch_size: int = 4
 
+    # M8 engines — optional sidecars / isolated workers.
+    # Fish Speech: local open-weights HTTP API (no Fish Audio cloud keys).
+    fish_speech_url: str | None = None
+    # CosyVoice 3 / IndexTTS2 / Chatterbox worker interpreters
+    # (defaults under /opt/*-venv in Docker images when present).
+    cosyvoice_python: Path | None = None
+    indextts_python: Path | None = None
+    chatterbox_python: Path | None = None
+
     # M7 polish
     log_format: str = "text"  # "text" or "json"
     watermark_enabled: bool = False

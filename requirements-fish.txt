@@ -1,0 +1,7 @@
+# Fish Speech runs as a local HTTP sidecar (open weights), not in the main venv.
+# Point VOICEFORGE_FISH_SPEECH_URL at your fish-speech API (e.g. Docker
+# fishaudio/fish-speech:latest-server-cuda on port 8080).
+#
+# No pip packages required in the VoiceForge app for this engine.
+# Optional: install fish-speech in a separate venv/container per upstream docs:
+#   https://github.com/fishaudio/fish-speech

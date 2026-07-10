@@ -4,7 +4,7 @@ def test_healthz_ok(client):
     body = resp.json()
     assert body["status"] == "ok"
     assert body["service"] == "voiceforge"
-    assert body["version"] == "0.2.0"
+    assert body["version"] == "0.3.0"
     assert body["enginesTotal"] >= 4
     assert "enginesReady" in body
 

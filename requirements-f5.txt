@@ -5,4 +5,4 @@
 # f5-tts pulls gradio and other UI deps we never use at runtime — acceptable
 # for a Docker-isolated install; they are not imported by the API path.
 f5-tts==1.1.20
-transformers==4.57.6
+transformers==4.57.3

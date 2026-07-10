@@ -29,6 +29,11 @@ RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt -r requirements-xtts.txt -r requirements-f5.txt
 
 # Isolated RVC worker venv — fairseq/numpy<2 conflict with coqui-tts above.
+# CosyVoice 3 / IndexTTS2 workers are optional: create /opt/cosyvoice-venv and
+# /opt/indextts-venv on the host (or extend this image) and set
+# VOICEFORGE_COSYVOICE_PYTHON / VOICEFORGE_INDEXTTS_PYTHON. Chatterbox and
+# Qwen3-TTS can be added with requirements-chatterbox.txt / requirements-qwen3.txt
+# when image size allows.
 RUN python -m venv /opt/rvc-venv \
     && /opt/rvc-venv/bin/pip install --no-cache-dir --upgrade pip \
     && /opt/rvc-venv/bin/pip install --no-cache-dir \

@@ -11,19 +11,24 @@ dependency on it.
 
 ## Status
 
-Milestones **M0–M7** are complete (see [Roadmap](#roadmap)). M6 lives in the
+Milestones **M0–M8** are complete (see [Roadmap](#roadmap)). M6 lives in the
 client (e.g. Reel Studio); this repo is the cloning API.
 
 - Full service scaffold: FastAPI, SQLite, bearer auth, CORS, jobs, SSE,
   metrics, optional synth watermark, GitHub CI.
-- Zero-shot engines: **OpenVoice V2** (MIT VC), **F5-TTS** (Apache/CC),
-  **XTTS-v2** (CPML — non-commercial). Pick per voice via `engine_id`.
+- Zero-shot engines: **OpenVoice V2**, **F5-TTS**, **XTTS-v2**, **Chatterbox**,
+  **Qwen3-TTS 1.7B**, **Fish Speech** (self-hosted), **CosyVoice 3**,
+  **IndexTTS2**. Pick per voice via `engine_id`.
 - High-fidelity: **RVC** (`tier=high_fidelity`, GPU + isolated worker).
 - CPU and GPU Docker images; model pre-download + e2e smoke tests.
 
-**CPU tip:** OpenVoice is the lightest zero-shot path. XTTS / F5 / RVC are
-much happier on a GPU session (Lightning AI, RunPod, etc.) — see
+**CPU tip:** OpenVoice is the lightest zero-shot path. XTTS / F5 / Qwen3 /
+Chatterbox / CosyVoice / IndexTTS / RVC are much happier on a GPU session
+(Lightning AI, RunPod, etc.) — see
 [Deploy on Lightning AI / GPU clouds](#deploy-on-lightning-ai--gpu-clouds).
+
+Fish Speech talks to a **local** fish-speech HTTP sidecar
+(`VOICEFORGE_FISH_SPEECH_URL`) — not the Fish Audio cloud API.
 
 ## Mission & non-negotiables
 
@@ -40,28 +45,17 @@ much happier on a GPU session (Lightning AI, RunPod, etc.) — see
 
 ## Architecture
 
-```
-┌─────────────────────┐        HTTP (REST + SSE)        ┌───────────────────────────┐
-│   Reel Studio (or    │ ───────────────────────────────▶│  VoiceForge service        │
-│   any other client)  │◀─────────────────────────────── │  (FastAPI, Python)         │
-└─────────────────────┘        WAV bytes / JSON          │                             │
-                                                          │  ┌───────────────────────┐  │
-                                                          │  │ Engine registry        │  │
-                                                          │  │ (pluggable)            │  │
-                                                          │  └──────────┬────────────┘  │
-                                                          │             │               │
-                                                          │             ▼               │
-                                                          │          XTTS-v2, F5-TTS,   │
-                                                          │          OpenVoice V2, RVC  │
-                                                          │                             │
-                                                          │  SQLite (voice metadata)     │
-                                                          │  data/ (samples, artifacts)  │
-                                                          └───────────────────────────┘
-```
+![System architecture](docs/architecture.svg)
 
 Single Python process (FastAPI + Uvicorn), `asyncio` background tasks for
 voice processing, SQLite for metadata, and a `data/` directory on disk for
 audio samples and per-voice artifacts (cached conditioning latents, etc.).
+Optional engines (CosyVoice 3, IndexTTS2, RVC) run in isolated worker venvs
+when their dependency pins conflict with the main app.
+
+### Clone and synthesize flow
+
+![Clone flow](docs/clone-flow.svg)
 
 ### The `CloneEngine` interface
 
@@ -84,24 +78,39 @@ Adding a new engine = one new file in `app/engines/` + one entry in
 
 ## Quickstart (Docker)
 
+Everything runs **inside Docker** so model crashes stay in the container —
+your Mac host only needs Docker Desktop.
+
 ```bash
 cp .env.example .env
-# Edit .env: set VOICEFORGE_API_TOKEN if this will be reachable beyond
-# localhost. Leave it empty for pure local dev.
+# Optional: set VOICEFORGE_API_TOKEN if you will expose beyond localhost.
 
-# CPU (works anywhere, no GPU required):
+# CPU (recommended on macOS — no NVIDIA GPU required):
 docker compose -f docker/docker-compose.yml --profile cpu up --build
-
-# GPU (requires the NVIDIA Container Toolkit on the host):
-docker compose -f docker/docker-compose.yml --profile gpu up --build
 ```
 
-The first request that touches an ML engine may download large checkpoints
-(cached in the `models-cache` Docker volume afterwards). To pre-download all
-engine models instead of waiting on the first API request:
+Then open in your browser:
+
+| URL | What |
+|-----|------|
+| **http://localhost:8089/** | **VoiceForge Studio** — pick an engine, upload a sample or record one in-browser (with a read-aloud script), clone, synthesize, play audio |
+| http://localhost:8089/docs | Interactive OpenAPI (Swagger) |
+| http://localhost:8089/healthz | Liveness JSON |
+
+Compose caps the container at **4 CPUs / 6 GB RAM** by default so a heavy
+model load cannot thrash the whole laptop. Data lives in `./data` and model
+weights in the `models-cache` Docker volume (not scattered across your Mac).
+
+**Mac tip:** start with engine `openvoice-v2` in the Studio UI — it is the
+lightest zero-shot path on CPU. First request for any engine may download
+checkpoints into the Docker volume (can take several minutes).
 
 ```bash
+# Pre-download built-in engine models (optional, still inside Docker):
 docker compose -f docker/docker-compose.yml --profile cpu run --rm voiceforge-download
+
+# GPU (requires NVIDIA Container Toolkit — not typical on Mac):
+# docker compose -f docker/docker-compose.yml --profile gpu up --build
 ```
 
 End-to-end smoke test (service must be running; run from a dev venv):
@@ -113,26 +122,7 @@ python scripts/e2e_smoke_test.py --engine xtts-v2
 python scripts/e2e_smoke_test.py --engine f5-tts
 ```
 
-Then:
-
-```bash
-curl http://localhost:8089/healthz
-
-curl -H "Authorization: Bearer $VOICEFORGE_API_TOKEN" \
-  -F "name=My Voice" -F "engine_id=xtts-v2" -F "tier=instant" \
-  -F "consent=true" -F "files=@sample.wav" \
-  http://localhost:8089/v1/voices
-
-curl -H "Authorization: Bearer $VOICEFORGE_API_TOKEN" \
-  http://localhost:8089/v1/voices/<id>   # poll until status == "ready"
-
-curl -H "Authorization: Bearer $VOICEFORGE_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"voiceId": "<id>", "text": "Hello from my cloned voice."}' \
-  http://localhost:8089/v1/synthesize -o out.wav
-```
-
-Interactive API docs: `http://localhost:8089/docs`.
+Or use the Studio UI at `http://localhost:8089/` instead of curl.
 
 ### CPU vs. GPU
 
@@ -167,6 +157,29 @@ docker compose -f docker/docker-compose.yml --profile gpu run --rm voiceforge-do
 Set `VOICEFORGE_RVC_PYTHON=/path/to/rvc-venv/bin/python` when running outside
 the GPU image. Tune training with `VOICEFORGE_RVC_EPOCHS` (default `50`) and
 `VOICEFORGE_RVC_BATCH_SIZE` (default `4`).
+
+### M8 engines (Chatterbox, Qwen3-TTS, Fish Speech, CosyVoice 3, IndexTTS2)
+
+| Engine | Install | Notes |
+|--------|---------|--------|
+| `chatterbox` | Isolated worker (`/opt/chatterbox-venv` in CPU image) | MIT; numpy/torch pins conflict with main venv |
+| `qwen3-tts` | `pip install -r requirements-qwen3.txt` (not in default CPU image) | In-process; ~6GB+ VRAM recommended |
+| `fish-speech` | Run fish-speech server; set `VOICEFORGE_FISH_SPEECH_URL` | Self-hosted only — no cloud API keys |
+| `cosyvoice-3` | Worker venv + `VOICEFORGE_COSYVOICE_PYTHON` | See `requirements-cosyvoice.txt` / `scripts/cosyvoice_worker.py` |
+| `indextts-2` | Worker venv + `VOICEFORGE_INDEXTTS_PYTHON` | See `requirements-indextts.txt` / `scripts/indextts_worker.py` |
+
+```bash
+# Pre-download (when the matching extra / worker is installed):
+python scripts/download_models.py --engine chatterbox
+python scripts/download_models.py --engine qwen3-tts
+python scripts/download_models.py --engine cosyvoice-3
+python scripts/download_models.py --engine indextts-2
+
+# Smoke (service running; ASR engines need intelligible speech — use the F5 fixture):
+python scripts/e2e_smoke_test.py --engine chatterbox
+python scripts/e2e_smoke_test.py --engine qwen3-tts \
+  --reference-wav scripts/fixtures/f5_reference_en.wav
+```
 
 ## API reference
 
@@ -213,6 +226,10 @@ All settings are environment variables, prefixed `VOICEFORGE_` (see
 | `VOICEFORGE_DEVICE` | `cpu`, `cuda`, or `auto`. |
 | `VOICEFORGE_MAX_UPLOAD_MB` / `_MAX_SAMPLES_PER_VOICE` / `_MAX_SYNTH_CHARS` | Abuse/resource-exhaustion limits. |
 | `VOICEFORGE_PREPROCESS_SAMPLES` | Trim/normalize reference uploads before cloning (default: true). |
+| `VOICEFORGE_RVC_PYTHON` / `_RVC_EPOCHS` / `_RVC_BATCH_SIZE` | Isolated RVC worker (high-fidelity). |
+| `VOICEFORGE_FISH_SPEECH_URL` | Local Fish Speech open-weights API base URL (e.g. `http://127.0.0.1:8080`). |
+| `VOICEFORGE_COSYVOICE_PYTHON` | CosyVoice 3 worker interpreter (default `/opt/cosyvoice-venv/bin/python`). |
+| `VOICEFORGE_INDEXTTS_PYTHON` | IndexTTS2 worker interpreter (default `/opt/indextts-venv/bin/python`). |
 | `VOICEFORGE_LOG_FORMAT` | `text` (default) or `json` for structured log lines. |
 | `VOICEFORGE_WATERMARK_ENABLED` | Mix a quiet voice-specific fingerprint into synth output (default: false). |
 | `VOICEFORGE_WATERMARK_STRENGTH` | Watermark amplitude 0–1 (default: `0.004`). |
@@ -276,6 +293,11 @@ compliance requirement, upgrade to `torch>=2.9`/`2.10` and add the
   | `f5-tts` | Apache-2.0 / CC (upstream) | Usually yes — confirm |
   | `xtts-v2` | **CPML — non-commercial / research only** | **No** |
   | `rvc` | RVC architecture MIT; your fine-tune is yours | Yes (architecture) |
+  | `chatterbox` | MIT | Yes |
+  | `qwen3-tts` | Apache-2.0 | Yes |
+  | `fish-speech` | Check fish-speech upstream (self-hosted) | Verify |
+  | `cosyvoice-3` | Apache-2.0 | Yes |
+  | `indextts-2` | Check IndexTTS upstream | Verify |
 - Application controls (not a substitute for law):
   - Every voice creation requires `consent: true`.
   - `GET /v1/engines` exposes `capabilities.license` for client UIs.
@@ -334,6 +356,9 @@ valid WAV output).
 - [x] **M7 — Polish & release:** GitHub CI, structured JSON logging,
       `/v1/metrics`, enhanced `/healthz`, optional synth watermarking,
       OpenAPI tag docs, `NOTICE.md` / `SECURITY.md` (v0.2.0).
+- [x] **M8 — Additional engines:** Chatterbox, Qwen3-TTS 1.7B, Fish Speech
+      (self-hosted sidecar), CosyVoice 3 + IndexTTS2 (isolated workers),
+      SVG architecture docs.
 
 ## Integrating with Reel Studio or any custom app
 
@@ -344,16 +369,10 @@ required. M6 is implemented **in the client repo** (e.g. a new
 
 ### Architecture
 
-```
-┌─────────────────────┐     HTTP (server-side)      ┌─────────────────────────┐
-│  Reel Studio        │  VOICEFORGE_SERVICE_URL     │  VoiceForge (this repo) │
-│  Next.js server     │ ──────────────────────────▶ │  :8089                  │
-│  voiceforge.ts      │  Bearer token (optional)    │  FastAPI + ML engines   │
-└─────────────────────┘                             └─────────────────────────┘
-         ▲
-         │ browser (optional clone UI — prefer proxy via Next API route)
-         └──────────────────────────────────────────────────────────────
-```
+See the SVG diagrams at the top of this README
+([architecture](docs/architecture.svg), [clone flow](docs/clone-flow.svg)).
+Reel Studio (or any client) calls VoiceForge over HTTP with
+`VOICEFORGE_SERVICE_URL` — no shared process, no merged Docker compose.
 
 - **List voices / synthesize:** call VoiceForge from your **backend** (Reel
   Studio's `VoiceProvider.synth()` pattern) — no browser CORS issues.
@@ -685,10 +704,13 @@ voiceforge/
 ├── app/
 │   ├── main.py, config.py, db.py, db_models.py, schemas.py, security.py, storage.py
 │   ├── api/          # voices.py, engines.py, synth.py, events.py, metrics.py
-│   ├── engines/       # base.py, registry.py, xtts_v2.py, f5_tts.py, openvoice_v2.py, rvc.py
+│   ├── engines/       # CloneEngine impls + registry (xtts, f5, openvoice, rvc,
+│   │                  # chatterbox, qwen3, fish, cosyvoice, indextts)
+│   ├── static/        # Docker-hosted Studio UI (http://localhost:8089/)
 │   └── jobs/          # background processing + SSE event bus
+├── docs/              # architecture.svg, clone-flow.svg
 ├── docker/            # Dockerfile.cpu, Dockerfile.gpu, docker-compose.yml
-├── scripts/           # download_models.py
+├── scripts/           # download_models.py, *_worker.py, e2e_smoke_test.py
 ├── tests/
 ├── data/              # git-ignored: db.sqlite, voices/{id}/{samples,artifacts}
 └── models/            # git-ignored: downloaded model checkpoints

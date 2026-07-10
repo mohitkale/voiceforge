@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api import engines, events, metrics, synth, voices
 from app.config import get_settings
@@ -17,6 +20,8 @@ from app.schemas import HealthResponse
 from app.security import SecurityHeadersMiddleware
 
 logger = logging.getLogger("voiceforge")
+
+_STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 OPENAPI_TAGS = [
     {
@@ -68,11 +73,13 @@ app = FastAPI(
     title="VoiceForge",
     description=(
         "Local-first, open-source, multi-engine voice cloning service.\n\n"
+        "**Web UI:** open `/` for the Docker-hosted studio.\n\n"
         "**Auth:** Bearer token on `/v1/*` when `VOICEFORGE_API_TOKEN` is set.\n\n"
-        "**Engines:** XTTS-v2, F5-TTS, OpenVoice V2 (zero-shot), RVC (high-fidelity).\n\n"
+        "**Engines:** OpenVoice V2, F5-TTS, XTTS-v2, Chatterbox, Qwen3-TTS, "
+        "Fish Speech, CosyVoice 3, IndexTTS2, RVC.\n\n"
         "See the project README for licensing, consent, and deployment notes."
     ),
-    version="0.2.0",
+    version="0.3.0",
     lifespan=lifespan,
     openapi_tags=OPENAPI_TAGS,
 )
@@ -95,6 +102,9 @@ app.include_router(events.router)
 app.include_router(synth.router)
 app.include_router(metrics.router)
 
+if _STATIC_DIR.is_dir():
+    app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
+
 
 def custom_openapi():
     if app.openapi_schema:
@@ -115,6 +125,13 @@ def custom_openapi():
 
 
 app.openapi = custom_openapi
+
+
+@app.get("/", include_in_schema=False)
+async def studio_ui() -> FileResponse:
+    """Browser studio for cloning and synthesis (served from the same container)."""
+    index = _STATIC_DIR / "index.html"
+    return FileResponse(index)
 
 
 @app.get("/healthz", response_model=HealthResponse, tags=["health"])

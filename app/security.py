@@ -52,9 +52,7 @@ async def auth_dependency(
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """Defense-in-depth headers; this API returns JSON/audio, never HTML, but
-    these cost nothing and block a few classes of browser-based mischief if
-    the API is ever proxied alongside a UI."""
+    """Defense-in-depth headers for the API and the Docker-hosted studio UI."""
 
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)

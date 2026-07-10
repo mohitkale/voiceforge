@@ -12,9 +12,17 @@ x-common: &common
     - ../data:/app/data
     - models-cache:/app/models
   restart: unless-stopped
+  # Keep the Mac host safe: cap CPU/RAM so a runaway model load can't thrash
+  # the laptop. Tune up if you have headroom.
+  mem_limit: 6g
+  cpus: 4.0
+  security_opt:
+    - no-new-privileges:true
 
 services:
-  # Default (CPU) profile: `docker compose up voiceforge-cpu`
+  # Default (CPU) profile — recommended on macOS (no NVIDIA GPU required):
+  #   docker compose -f docker/docker-compose.yml --profile cpu up --build
+  # Then open http://localhost:8089/  (studio UI) and /docs (OpenAPI).
   voiceforge-cpu:
     <<: *common
     build:
@@ -36,14 +44,34 @@ services:
     environment:
       COQUI_TOS_AGREED: "1"
 
+  # Optional Fish Speech open-weights sidecar (self-hosted, no cloud API keys).
+  #   docker compose -f docker/docker-compose.yml --profile fish up --build
+  # Point VoiceForge at it with VOICEFORGE_FISH_SPEECH_URL=http://fish-speech:8080
+  # (set in .env when using the cpu+fish profiles together on the same network).
+  fish-speech:
+    image: fishaudio/fish-speech:latest-server-cpu
+    profiles: ["fish"]
+    ports:
+      - "8080:8080"
+    volumes:
+      - fish-checkpoints:/app/checkpoints
+      - fish-references:/app/references
+    mem_limit: 6g
+    cpus: 4.0
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
   # GPU profile: `docker compose --profile gpu up voiceforge-gpu`
-  # Requires the NVIDIA Container Toolkit on the host.
+  # Requires the NVIDIA Container Toolkit on the host (not available on typical Macs).
   voiceforge-gpu:
     <<: *common
     build:
       context: ..
       dockerfile: docker/Dockerfile.gpu
     profiles: ["gpu"]
+    mem_limit: 12g
+    cpus: 8.0
     deploy:
       resources:
         reservations:
@@ -54,3 +82,5 @@ services:
 
 volumes:
   models-cache:
+  fish-checkpoints:
+  fish-references:

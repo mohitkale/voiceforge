@@ -1,0 +1,3 @@
+# Qwen3-TTS 1.7B Base — Apache-2.0. torch installed separately in Docker.
+qwen-tts>=0.0.1
+transformers==4.57.3

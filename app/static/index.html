@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VoiceForge Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #131c2f;
+      --box: #1b2945;
+      --stroke: #2d3d63;
+      --accent: #86a8e7;
+      --accent-strong: #5b8def;
+      --text: #e6edf7;
+      --muted: #b6c3db;
+      --ok: #3ecf8e;
+      --warn: #e6b35a;
+      --err: #e86a6a;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "DM Sans", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, #1a2a4a 0%, transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, #152038 0%, transparent 50%),
+        var(--bg);
+    }
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 1.75rem;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(1.75rem, 3vw, 2.25rem);
+      letter-spacing: -0.02em;
+    }
+    .sub {
+      margin: 0.35rem 0 0;
+      color: var(--muted);
+      max-width: 36rem;
+      line-height: 1.45;
+    }
+    .badge {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.75rem;
+      color: var(--accent);
+      border: 1px solid var(--stroke);
+      background: var(--box);
+      padding: 0.35rem 0.65rem;
+      border-radius: 999px;
+    }
+    .grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 900px) {
+      .grid { grid-template-columns: 1.1fr 0.9fr; }
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      padding: 1.15rem 1.2rem 1.3rem;
+    }
+    .panel h2 {
+      margin: 0 0 0.85rem;
+      font-size: 1.05rem;
+    }
+    label {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin: 0.75rem 0 0.35rem;
+    }
+    input[type="text"], input[type="password"], select, textarea {
+      width: 100%;
+      background: var(--box);
+      border: 1px solid var(--stroke);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 0.65rem 0.75rem;
+      font: inherit;
+    }
+    textarea { min-height: 5.5rem; resize: vertical; }
+    input[type="file"] {
+      width: 100%;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      align-items: center;
+      margin-top: 1rem;
+    }
+    button {
+      font: inherit;
+      font-weight: 600;
+      border: 0;
+      border-radius: 8px;
+      padding: 0.65rem 1rem;
+      cursor: pointer;
+      background: var(--accent-strong);
+      color: #0b1220;
+    }
+    button.secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--stroke);
+    }
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .engines {
+      display: grid;
+      gap: 0.55rem;
+      max-height: 22rem;
+      overflow: auto;
+    }
+    .engine {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.25rem 0.75rem;
+      padding: 0.7rem 0.8rem;
+      background: var(--box);
+      border: 1px solid var(--stroke);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .engine.selected { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+    .engine .id {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.78rem;
+      color: var(--accent);
+    }
+    .engine .label { font-weight: 600; font-size: 0.92rem; }
+    .pill {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.2rem 0.45rem;
+      border-radius: 999px;
+      align-self: start;
+    }
+    .pill.ready { background: rgba(62, 207, 142, 0.15); color: var(--ok); }
+    .pill.not-ready { background: rgba(230, 179, 90, 0.15); color: var(--warn); }
+    .log {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.78rem;
+      color: var(--muted);
+      background: #0a101c;
+      border: 1px solid var(--stroke);
+      border-radius: 8px;
+      padding: 0.75rem;
+      min-height: 5rem;
+      max-height: 10rem;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+    .voices { display: grid; gap: 0.5rem; }
+    .voice {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      align-items: center;
+      padding: 0.65rem 0.75rem;
+      background: var(--box);
+      border: 1px solid var(--stroke);
+      border-radius: 8px;
+    }
+    .voice button { padding: 0.4rem 0.7rem; font-size: 0.85rem; }
+    .status-ready { color: var(--ok); }
+    .status-failed { color: var(--err); }
+    .status-processing, .status-pending { color: var(--warn); }
+    audio { width: 100%; margin-top: 0.75rem; }
+    .hint { color: var(--muted); font-size: 0.85rem; margin-top: 0.5rem; line-height: 1.4; }
+    a { color: var(--accent); }
+    .tabs { display: flex; gap: 0.4rem; margin-top: 0.75rem; }
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 0.55rem 0.6rem;
+      border: 1px solid var(--stroke);
+      border-radius: 8px;
+      background: var(--box);
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .tab.active { border-color: var(--accent); color: var(--text); box-shadow: inset 0 0 0 1px var(--accent); }
+    .source-pane { display: none; margin-top: 0.6rem; }
+    .source-pane.active { display: block; }
+    .script-box {
+      background: var(--box);
+      border: 1px solid var(--stroke);
+      border-radius: 8px;
+      padding: 0.75rem 0.85rem;
+      font-size: 0.92rem;
+      line-height: 1.55;
+      color: var(--text);
+    }
+    .rec-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-top: 0.65rem;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .rec-dot {
+      width: 0.6rem;
+      height: 0.6rem;
+      border-radius: 50%;
+      background: var(--stroke);
+    }
+    .rec-dot.live { background: var(--err); animation: pulse 1s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+    button.danger { background: var(--err); color: #1a0b0b; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>VoiceForge Studio</h1>
+        <p class="sub">
+          Clone a voice from a short sample and synthesize speech — all inside Docker.
+          API docs: <a href="/docs" target="_blank" rel="noopener">/docs</a>
+        </p>
+      </div>
+      <span class="badge" id="healthBadge">checking…</span>
+    </header>
+
+    <div class="grid">
+      <section class="panel">
+        <h2>1. Clone</h2>
+        <label for="token">API token (optional if unset in Docker)</label>
+        <input id="token" type="password" placeholder="VOICEFORGE_API_TOKEN" autocomplete="off" />
+
+        <label for="voiceName">Voice name</label>
+        <input id="voiceName" type="text" value="Demo Voice" />
+
+        <label for="language">Language</label>
+        <select id="language">
+          <option value="en">en</option>
+          <option value="zh">zh</option>
+          <option value="ja">ja</option>
+          <option value="ko">ko</option>
+          <option value="es">es</option>
+          <option value="fr">fr</option>
+          <option value="de">de</option>
+        </select>
+
+        <label for="tier">Tier</label>
+        <select id="tier">
+          <option value="instant">instant (zero-shot)</option>
+          <option value="high_fidelity">high_fidelity (RVC)</option>
+        </select>
+
+        <label>Reference audio</label>
+        <div class="tabs">
+          <div class="tab active" id="tabUpload" data-source="upload">Upload file</div>
+          <div class="tab" id="tabRecord" data-source="record">Record voice</div>
+        </div>
+
+        <div class="source-pane active" id="paneUpload">
+          <input id="sample" type="file" accept="audio/*,.wav,.mp3,.flac,.ogg,.m4a" />
+        </div>
+
+        <div class="source-pane" id="paneRecord">
+          <div class="script-box" id="scriptText"></div>
+          <div class="row" style="margin-top:0.6rem">
+            <button id="newScriptBtn" class="secondary" type="button">New script</button>
+            <button id="recordBtn" type="button">Start recording</button>
+            <button id="stopRecordBtn" class="secondary" type="button" disabled>Stop</button>
+          </div>
+          <div class="rec-meta">
+            <span class="rec-dot" id="recDot"></span>
+            <span id="recTimer">00:00</span>
+            <span id="recHint">Read the script aloud once recording starts.</span>
+          </div>
+          <audio id="recPreview" controls style="display:none"></audio>
+        </div>
+
+        <p class="hint">
+          On Mac CPU Docker, engines marked <strong>ready</strong> work now
+          (<code>openvoice-v2</code>, <code>f5-tts</code>, <code>xtts-v2</code>,
+          <code>chatterbox</code> once the isolated worker venv is built in). Others need a GPU worker or
+          sidecar — they are listed so you can see what’s available, not broken.
+          Failed voices in the list are usually old e2e attempts — delete them.
+        </p>
+
+        <div class="engines" id="engines"></div>
+
+        <div class="row">
+          <button id="cloneBtn" type="button">Clone voice</button>
+          <button id="refreshEngines" class="secondary" type="button">Refresh engines</button>
+        </div>
+        <div class="log" id="log" aria-live="polite"></div>
+      </section>
+
+      <section class="panel">
+        <h2>2. Synthesize</h2>
+        <label for="voiceSelect">Ready voice</label>
+        <select id="voiceSelect"></select>
+
+        <label for="synthText">Text</label>
+        <textarea id="synthText">Hello from VoiceForge. This is a cloned voice running in Docker.</textarea>
+
+        <div class="row">
+          <button id="synthBtn" type="button">Synthesize</button>
+          <button id="refreshVoices" class="secondary" type="button">Refresh voices</button>
+        </div>
+        <audio id="player" controls></audio>
+
+        <h2 style="margin-top:1.4rem">Voices</h2>
+        <div class="voices" id="voices"></div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const state = { engineId: "openvoice-v2", voices: [], sampleSource: "upload", recordedFile: null };
+
+    const SCRIPTS = [
+      "Good morning. Today the weather is nice and sunny. I am going to the market to buy some vegetables and fruits. After that, I will have a cup of chai with my friends.",
+      "My name is Rahul and I live in a small town. Every evening, I like to walk in the park near my house. My mother makes very tasty food, and I enjoy eating with my family.",
+      "This weekend, we are planning a trip to the hill station. We will pack our bags, take some snacks, and travel by train. I am very excited to see the mountains and breathe the fresh air.",
+      "I love watching cricket matches with my friends. We sit together, eat snacks, and cheer for our favourite team. It is always a fun time, especially when India wins the match.",
+      "Every Sunday, my family visits the temple near our home. After that, we go to a nearby restaurant and eat dosa and idli. It is one of my favourite parts of the week.",
+    ];
+
+    function randomScript() {
+      return SCRIPTS[Math.floor(Math.random() * SCRIPTS.length)];
+    }
+
+    function token() {
+      return $("token").value.trim();
+    }
+
+    function headers(json = false) {
+      const h = {};
+      if (token()) h["Authorization"] = `Bearer ${token()}`;
+      if (json) h["Content-Type"] = "application/json";
+      return h;
+    }
+
+    function log(msg) {
+      const el = $("log");
+      const line = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      el.textContent = el.textContent ? `${el.textContent}\n${line}` : line;
+      el.scrollTop = el.scrollHeight;
+    }
+
+    async function api(path, opts = {}) {
+      const res = await fetch(path, opts);
+      if (!res.ok) {
+        let detail = res.statusText;
+        try {
+          const body = await res.json();
+          detail = body.detail || JSON.stringify(body);
+        } catch (_) {
+          try { detail = await res.text(); } catch (__) {}
+        }
+        throw new Error(`${res.status}: ${detail}`);
+      }
+      return res;
+    }
+
+    async function loadHealth() {
+      try {
+        const res = await api("/healthz");
+        const body = await res.json();
+        $("healthBadge").textContent =
+          `v${body.version} · ${body.enginesReady}/${body.enginesTotal} engines ready`;
+      } catch (err) {
+        $("healthBadge").textContent = "offline";
+        log(`Health check failed: ${err.message}`);
+      }
+    }
+
+    function statusPill(e) {
+      if (e.ready) return { cls: "ready", text: "ready" };
+      const hints = {
+        "chatterbox": "needs worker",
+        "qwen3-tts": "not in CPU image",
+        "fish-speech": "needs sidecar",
+        "cosyvoice-3": "needs worker",
+        "indextts-2": "needs worker",
+        "rvc": "needs GPU worker",
+      };
+      return { cls: "not-ready", text: hints[e.id] || "deps missing" };
+    }
+
+    async function loadEngines() {
+      const res = await api("/v1/engines", { headers: headers() });
+      const engines = await res.json();
+      const root = $("engines");
+      root.innerHTML = "";
+      for (const e of engines) {
+        const pill = statusPill(e);
+        const div = document.createElement("div");
+        div.className = "engine" + (e.id === state.engineId ? " selected" : "");
+        div.innerHTML = `
+          <div>
+            <div class="label">${e.label}</div>
+            <div class="id">${e.id}</div>
+          </div>
+          <span class="pill ${pill.cls}">${pill.text}</span>
+        `;
+        div.addEventListener("click", () => {
+          state.engineId = e.id;
+          [...root.children].forEach((c) => c.classList.remove("selected"));
+          div.classList.add("selected");
+          if (e.id === "rvc") $("tier").value = "high_fidelity";
+          if (!e.ready) {
+            log(`${e.id} is not ready in this container (${pill.text}). Use a ready engine, or rebuild/configure as documented.`);
+          }
+        });
+        root.appendChild(div);
+      }
+    }
+
+    function renderVoices() {
+      const list = $("voices");
+      const select = $("voiceSelect");
+      list.innerHTML = "";
+      select.innerHTML = "";
+      const ready = state.voices.filter((v) => v.status === "ready");
+      for (const v of ready) {
+        const opt = document.createElement("option");
+        opt.value = v.id;
+        opt.textContent = `${v.name} (${v.engineId})`;
+        select.appendChild(opt);
+      }
+      for (const v of state.voices) {
+        const row = document.createElement("div");
+        row.className = "voice";
+        row.innerHTML = `
+          <div>
+            <strong>${v.name}</strong>
+            <div class="id" style="font-family:IBM Plex Mono,monospace;font-size:0.75rem;color:var(--accent)">${v.id.slice(0, 10)}… · ${v.engineId}</div>
+            <div class="status-${v.status}">${v.status}${v.errorMessage ? " — " + v.errorMessage : ""}</div>
+          </div>
+        `;
+        const del = document.createElement("button");
+        del.className = "secondary";
+        del.textContent = "Delete";
+        del.addEventListener("click", async () => {
+          try {
+            await api(`/v1/voices/${v.id}`, { method: "DELETE", headers: headers() });
+            log(`Deleted voice ${v.id}`);
+            await loadVoices();
+          } catch (err) {
+            log(`Delete failed: ${err.message}`);
+          }
+        });
+        row.appendChild(del);
+        list.appendChild(row);
+      }
+      if (!state.voices.length) {
+        list.innerHTML = `<p class="hint">No voices yet.</p>`;
+      }
+    }
+
+    async function loadVoices() {
+      const res = await api("/v1/voices", { headers: headers() });
+      state.voices = await res.json();
+      renderVoices();
+    }
+
+    async function pollVoice(id) {
+      const deadline = Date.now() + 30 * 60 * 1000;
+      while (Date.now() < deadline) {
+        const res = await api(`/v1/voices/${id}`, { headers: headers() });
+        const v = await res.json();
+        log(`Voice ${id.slice(0, 8)}… status=${v.status}`);
+        if (v.status === "ready") return v;
+        if (v.status === "failed") throw new Error(v.errorMessage || "clone failed");
+        await new Promise((r) => setTimeout(r, 2500));
+      }
+      throw new Error("Timed out waiting for clone");
+    }
+
+    // --- Recording: capture mic audio, then re-encode to WAV client-side so
+    // the server's libsndfile-based sniffing (which can't decode browser
+    // WebM/Opus) always sees a valid file. ---
+    const rec = { mediaRecorder: null, stream: null, chunks: [], startedAt: 0, timerId: null };
+
+    function setScript(text) {
+      $("scriptText").textContent = text;
+    }
+
+    function switchSource(source) {
+      state.sampleSource = source;
+      $("tabUpload").classList.toggle("active", source === "upload");
+      $("tabRecord").classList.toggle("active", source === "record");
+      $("paneUpload").classList.toggle("active", source === "upload");
+      $("paneRecord").classList.toggle("active", source === "record");
+    }
+
+    function formatTimer(ms) {
+      const s = Math.floor(ms / 1000);
+      const mm = String(Math.floor(s / 60)).padStart(2, "0");
+      const ss = String(s % 60).padStart(2, "0");
+      return `${mm}:${ss}`;
+    }
+
+    function audioBufferToWavBlob(buffer) {
+      const numChannels = buffer.numberOfChannels;
+      const sampleRate = buffer.sampleRate;
+      const bytesPerSample = 2;
+      const blockAlign = numChannels * bytesPerSample;
+      // Downmix to mono — reference clips don't need stereo, and mono keeps
+      // engines' preprocessing/ASR paths simpler.
+      const frameCount = buffer.length;
+      const mono = new Float32Array(frameCount);
+      for (let ch = 0; ch < numChannels; ch++) {
+        const data = buffer.getChannelData(ch);
+        for (let i = 0; i < frameCount; i++) mono[i] += data[i] / numChannels;
+      }
+      const dataSize = frameCount * bytesPerSample;
+      const arrayBuffer = new ArrayBuffer(44 + dataSize);
+      const view = new DataView(arrayBuffer);
+      const writeStr = (offset, str) => {
+        for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+      };
+      writeStr(0, "RIFF");
+      view.setUint32(4, 36 + dataSize, true);
+      writeStr(8, "WAVE");
+      writeStr(12, "fmt ");
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true); // PCM
+      view.setUint16(22, 1, true); // mono
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * blockAlign, true);
+      view.setUint16(32, blockAlign, true);
+      view.setUint16(34, 16, true);
+      writeStr(36, "data");
+      view.setUint32(40, dataSize, true);
+      let offset = 44;
+      for (let i = 0; i < frameCount; i++) {
+        const clamped = Math.max(-1, Math.min(1, mono[i]));
+        view.setInt16(offset, clamped < 0 ? clamped * 0x8000 : clamped * 0x7fff, true);
+        offset += 2;
+      }
+      return new Blob([arrayBuffer], { type: "audio/wav" });
+    }
+
+    async function blobToWavFile(blob) {
+      const arrayBuffer = await blob.arrayBuffer();
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioCtx();
+      try {
+        const decoded = await ctx.decodeAudioData(arrayBuffer);
+        const wavBlob = audioBufferToWavBlob(decoded);
+        return new File([wavBlob], "recording.wav", { type: "audio/wav" });
+      } finally {
+        ctx.close().catch(() => {});
+      }
+    }
+
+    function stopStream() {
+      if (rec.stream) {
+        rec.stream.getTracks().forEach((t) => t.stop());
+        rec.stream = null;
+      }
+      if (rec.timerId) {
+        clearInterval(rec.timerId);
+        rec.timerId = null;
+      }
+      $("recDot").classList.remove("live");
+    }
+
+    $("tabUpload").addEventListener("click", () => switchSource("upload"));
+    $("tabRecord").addEventListener("click", () => switchSource("record"));
+    $("newScriptBtn").addEventListener("click", () => setScript(randomScript()));
+
+    $("recordBtn").addEventListener("click", async () => {
+      try {
+        rec.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (err) {
+        log(`Microphone access failed: ${err.message}`);
+        return;
+      }
+      rec.chunks = [];
+      state.recordedFile = null;
+      $("recPreview").style.display = "none";
+      $("recHint").textContent = "Recording — read the script aloud.";
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm")
+        ? "audio/webm"
+        : "";
+      rec.mediaRecorder = mimeType
+        ? new MediaRecorder(rec.stream, { mimeType })
+        : new MediaRecorder(rec.stream);
+      rec.mediaRecorder.addEventListener("dataavailable", (e) => {
+        if (e.data && e.data.size) rec.chunks.push(e.data);
+      });
+      rec.mediaRecorder.addEventListener("stop", async () => {
+        stopStream();
+        $("recordBtn").disabled = false;
+        $("stopRecordBtn").disabled = true;
+        try {
+          const rawBlob = new Blob(rec.chunks, { type: rec.mediaRecorder.mimeType || "audio/webm" });
+          $("recHint").textContent = "Processing recording…";
+          const wavFile = await blobToWavFile(rawBlob);
+          state.recordedFile = wavFile;
+          const url = URL.createObjectURL(wavFile);
+          $("recPreview").src = url;
+          $("recPreview").style.display = "block";
+          $("recHint").textContent = "Recording ready. Re-record if you want another take.";
+          log(`Recorded ${(wavFile.size / 1024).toFixed(0)} KB reference clip.`);
+        } catch (err) {
+          $("recHint").textContent = "Could not process recording — try again.";
+          log(`Recording processing failed: ${err.message}`);
+        }
+      });
+      rec.mediaRecorder.start();
+      rec.startedAt = Date.now();
+      $("recDot").classList.add("live");
+      $("recTimer").textContent = "00:00";
+      rec.timerId = setInterval(() => {
+        $("recTimer").textContent = formatTimer(Date.now() - rec.startedAt);
+      }, 250);
+      $("recordBtn").disabled = true;
+      $("stopRecordBtn").disabled = false;
+    });
+
+    $("stopRecordBtn").addEventListener("click", () => {
+      if (rec.mediaRecorder && rec.mediaRecorder.state !== "inactive") {
+        rec.mediaRecorder.stop();
+      }
+    });
+
+    setScript(randomScript());
+
+    $("cloneBtn").addEventListener("click", async () => {
+      const file = state.sampleSource === "record" ? state.recordedFile : $("sample").files[0];
+      if (!file) {
+        log(
+          state.sampleSource === "record"
+            ? "Record a reference clip first."
+            : "Choose a reference audio file first."
+        );
+        return;
+      }
+      $("cloneBtn").disabled = true;
+      try {
+        const fd = new FormData();
+        fd.append("name", $("voiceName").value || "Demo Voice");
+        fd.append("engine_id", state.engineId);
+        fd.append("tier", $("tier").value);
+        fd.append("language", $("language").value);
+        fd.append("consent", "true");
+        fd.append("files", file);
+        log(`Creating voice with engine=${state.engineId}…`);
+        const res = await api("/v1/voices", { method: "POST", headers: headers(), body: fd });
+        const created = await res.json();
+        log(`Created ${created.id} — waiting for processing…`);
+        await pollVoice(created.id);
+        log("Clone ready.");
+        await loadVoices();
+      } catch (err) {
+        log(`Clone failed: ${err.message}`);
+      } finally {
+        $("cloneBtn").disabled = false;
+      }
+    });
+
+    $("synthBtn").addEventListener("click", async () => {
+      const voiceId = $("voiceSelect").value;
+      if (!voiceId) {
+        log("No ready voice selected.");
+        return;
+      }
+      $("synthBtn").disabled = true;
+      try {
+        log("Synthesizing…");
+        const res = await api("/v1/synthesize", {
+          method: "POST",
+          headers: headers(true),
+          body: JSON.stringify({
+            voiceId,
+            text: $("synthText").value,
+            language: $("language").value,
+          }),
+        });
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        $("player").src = url;
+        $("player").play().catch(() => {});
+        log(`Got WAV (${blob.size} bytes).`);
+      } catch (err) {
+        log(`Synth failed: ${err.message}`);
+      } finally {
+        $("synthBtn").disabled = false;
+      }
+    });
+
+    $("refreshEngines").addEventListener("click", () => loadEngines().catch((e) => log(e.message)));
+    $("refreshVoices").addEventListener("click", () => loadVoices().catch((e) => log(e.message)));
+    $("token").addEventListener("change", () => {
+      localStorage.setItem("voiceforge_token", token());
+    });
+
+    (async function init() {
+      $("token").value = localStorage.getItem("voiceforge_token") || "";
+      await loadHealth();
+      try {
+        await loadEngines();
+        await loadVoices();
+      } catch (err) {
+        log(`Init failed: ${err.message}`);
+      }
+    })();
+  </script>
+</body>
+</html>

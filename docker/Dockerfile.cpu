@@ -20,11 +20,19 @@ WORKDIR /app
 # Dependencies install in their own layer (cached independently of app-code
 # changes). torch/torchaudio come from PyTorch's dedicated CPU wheel index so
 # no CUDA runtime libraries get pulled in on a CPU-only host.
-COPY requirements.txt requirements-xtts.txt requirements-f5.txt requirements-openvoice.txt ./
+COPY requirements.txt requirements-xtts.txt requirements-f5.txt requirements-openvoice.txt requirements-qwen3.txt requirements-chatterbox.txt ./
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir torch==2.8.0 torchaudio==2.8.0 \
        --index-url https://download.pytorch.org/whl/cpu \
-    && pip install --no-cache-dir -r requirements.txt -r requirements-xtts.txt -r requirements-f5.txt
+    && pip install --no-cache-dir -r requirements.txt -r requirements-xtts.txt -r requirements-f5.txt -r requirements-qwen3.txt
+
+# Isolated Chatterbox worker — numpy<2 / torch pins conflict with coqui-tts above.
+RUN python -m venv /opt/chatterbox-venv \
+    && /opt/chatterbox-venv/bin/pip install --no-cache-dir --upgrade pip \
+    && /opt/chatterbox-venv/bin/pip install --no-cache-dir \
+       torch==2.6.0 torchaudio==2.6.0 \
+       --index-url https://download.pytorch.org/whl/cpu \
+    && /opt/chatterbox-venv/bin/pip install --no-cache-dir -r requirements-chatterbox.txt
 
 COPY app ./app
 COPY scripts ./scripts
@@ -37,6 +45,7 @@ USER voiceforge
 ENV VOICEFORGE_DATA_DIR=/app/data \
     VOICEFORGE_MODELS_DIR=/app/models \
     VOICEFORGE_DEVICE=cpu \
+    VOICEFORGE_CHATTERBOX_PYTHON=/opt/chatterbox-venv/bin/python \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
 

@@ -41,10 +41,17 @@ def _load_reference_wav(path: Path) -> bytes:
 def _reference_bytes(engine_id: str, reference_wav: Path | None) -> bytes:
     if reference_wav is not None:
         return _load_reference_wav(reference_wav)
-    if engine_id == "f5-tts":
+    # Engines that need intelligible speech for Whisper ref_text / ASR.
+    if engine_id in {
+        "f5-tts",
+        "qwen3-tts",
+        "fish-speech",
+        "cosyvoice-3",
+    }:
         if not _F5_REFERENCE_WAV.is_file():
             raise RuntimeError(
-                f"F5-TTS needs intelligible speech for ref_text — missing {_F5_REFERENCE_WAV}"
+                f"{engine_id} needs intelligible speech for ref_text — "
+                f"missing {_F5_REFERENCE_WAV}"
             )
         return _load_reference_wav(_F5_REFERENCE_WAV)
     return _generate_reference_wav()
@@ -192,7 +199,8 @@ def main() -> None:
         default=None,
         help=(
             "Reference clip to upload (default: synthetic; "
-            "f5-tts uses scripts/fixtures/f5_reference_en.wav)"
+            "f5-tts / qwen3-tts / fish-speech / cosyvoice-3 use "
+            "scripts/fixtures/f5_reference_en.wav)"
         ),
     )
     args = parser.parse_args()

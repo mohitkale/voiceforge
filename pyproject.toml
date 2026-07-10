@@ -1,6 +1,6 @@
 [project]
 name = "voiceforge"
-version = "0.2.0"
+version = "0.3.0"
 description = "Local-first, open-source, multi-engine voice cloning service"
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
@@ -35,20 +35,32 @@ xtts = [
   # Pinned: coqui-tts only declares transformers>=4.57, but transformers 5.x
   # dropped `isin_mps_friendly`, which coqui-tts's Tortoise/XTTS layers still
   # import — breaks `from TTS.api import TTS` entirely on newer transformers.
-  "transformers==4.57.6",
+  "transformers==4.57.3",
 ]
 f5 = [
   "f5-tts==1.1.20",
-  "transformers==4.57.6",
+  "transformers==4.57.3",
 ]
 # OpenVoice V2 reuses the coqui-tts stack (same pins as `xtts`).
 openvoice = [
   "coqui-tts==0.27.5",
   "torchaudio==2.8.0",
-  "transformers==4.57.6",
+  "transformers==4.57.3",
 ]
 # RVC runs in an isolated worker venv — see requirements-rvc.txt (not installed here).
 rvc = []
+chatterbox = [
+  "chatterbox-tts>=0.1.2",
+]
+qwen3 = [
+  "qwen-tts>=0.0.1",
+  "transformers==4.57.3",
+]
+# Fish Speech uses a local HTTP sidecar — see requirements-fish.txt.
+fish = []
+# CosyVoice 3 / IndexTTS2 run in isolated worker venvs.
+cosyvoice = []
+indextts = []
 dev = [
   "pytest==9.1.1",
   "pytest-asyncio==1.4.0",

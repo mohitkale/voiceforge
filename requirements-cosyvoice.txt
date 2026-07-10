@@ -1,0 +1,8 @@
+# CosyVoice 3 runs in an isolated worker venv (VOICEFORGE_COSYVOICE_PYTHON).
+# Install per FunAudioLLM/CosyVoice upstream (often Python 3.10):
+#   git clone https://github.com/FunAudioLLM/CosyVoice.git
+#   pip install -r requirements.txt
+#   huggingface-cli download FunAudioLLM/Fun-CosyVoice3-0.5B-2512
+#
+# Or use scripts/cosyvoice_worker.py setup --models-dir ...
+huggingface-hub>=0.26.0

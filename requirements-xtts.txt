@@ -16,5 +16,5 @@ torchaudio==2.8.0
 # `transformers.pytorch_utils`, which coqui-tts 0.27.5's XTTS/Tortoise layers
 # still import, breaking `from TTS.api import TTS` entirely. 4.57.x is the
 # newest line confirmed compatible.
-transformers==4.57.6
+transformers==4.57.3
 coqui-tts==0.27.5

@@ -19,6 +19,11 @@ runtime; those weights and some optional training tools have their own terms.
 | `f5-tts` | F5-TTS v1 base (SWivid) | Apache-2.0 / CC (see upstream) | Generally yes — confirm upstream |
 | `xtts-v2` | XTTS-v2 (Coqui) | **CPML — non-commercial / research only** | **No** |
 | `rvc` | RVC architecture / trained per-voice checkpoints | MIT (architecture); your trained weights are yours | Yes for architecture; respect base TTS used for synth |
+| `chatterbox` | Resemble AI Chatterbox | MIT | Yes |
+| `qwen3-tts` | Qwen3-TTS-12Hz-1.7B-Base | Apache-2.0 | Yes |
+| `fish-speech` | Fish Speech open weights (self-hosted sidecar) | Check fish-speech / Fish Audio upstream | Verify — not the Fish Audio cloud API |
+| `cosyvoice-3` | Fun-CosyVoice3-0.5B | Apache-2.0 | Yes |
+| `indextts-2` | IndexTTS-2 (IndexTeam) | Check IndexTTS upstream | Verify before commercial use |
 
 Always re-check the upstream model card before production or commercial use.
 `GET /v1/engines` exposes each engine's `capabilities.license` string for UIs.

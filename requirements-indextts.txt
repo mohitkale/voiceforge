@@ -1,0 +1,6 @@
+# IndexTTS2 runs in an isolated worker venv (VOICEFORGE_INDEXTTS_PYTHON).
+# Upstream prefers `uv` — see https://github.com/index-tts/index-tts
+#   hf download IndexTeam/IndexTTS-2 --local-dir=checkpoints
+#
+# Or use scripts/indextts_worker.py setup --models-dir ...
+huggingface-hub>=0.26.0

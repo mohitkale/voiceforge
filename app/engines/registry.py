@@ -10,8 +10,13 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from app.engines.base import CloneEngine
+from app.engines.chatterbox import ChatterboxEngine
+from app.engines.cosyvoice_3 import CosyVoice3Engine
 from app.engines.f5_tts import F5TtsEngine
+from app.engines.fish_speech import FishSpeechEngine
+from app.engines.indextts_2 import IndexTts2Engine
 from app.engines.openvoice_v2 import OpenVoiceV2Engine
+from app.engines.qwen3_tts import Qwen3TtsEngine
 from app.engines.rvc import RvcEngine
 from app.engines.xtts_v2 import XttsV2Engine
 
@@ -20,6 +25,11 @@ _FACTORIES: dict[str, Callable[[], CloneEngine]] = {
     "f5-tts": F5TtsEngine,
     "openvoice-v2": OpenVoiceV2Engine,
     "rvc": RvcEngine,
+    "chatterbox": ChatterboxEngine,
+    "qwen3-tts": Qwen3TtsEngine,
+    "fish-speech": FishSpeechEngine,
+    "cosyvoice-3": CosyVoice3Engine,
+    "indextts-2": IndexTts2Engine,
 }
 
 _instances: dict[str, CloneEngine] = {}

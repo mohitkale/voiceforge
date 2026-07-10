@@ -8,6 +8,50 @@ def test_list_engines_includes_built_in_ids(client):
     assert "f5-tts" in ids
     assert "openvoice-v2" in ids
     assert "rvc" in ids
+    assert "chatterbox" in ids
+    assert "qwen3-tts" in ids
+    assert "fish-speech" in ids
+    assert "cosyvoice-3" in ids
+    assert "indextts-2" in ids
+
+
+def test_chatterbox_engine_metadata(client):
+    resp = client.get("/v1/engines")
+    eng = next(e for e in resp.json() if e["id"] == "chatterbox")
+    assert eng["label"].startswith("Chatterbox")
+    assert eng["capabilities"]["zero_shot"] is True
+    assert "MIT" in eng["capabilities"]["license"]
+
+
+def test_qwen3_engine_metadata(client):
+    resp = client.get("/v1/engines")
+    eng = next(e for e in resp.json() if e["id"] == "qwen3-tts")
+    assert "Qwen3" in eng["label"]
+    assert eng["capabilities"]["zero_shot"] is True
+    assert "Apache" in eng["capabilities"]["license"]
+
+
+def test_fish_speech_engine_metadata(client):
+    resp = client.get("/v1/engines")
+    eng = next(e for e in resp.json() if e["id"] == "fish-speech")
+    assert "Fish Speech" in eng["label"]
+    assert eng["capabilities"]["zero_shot"] is True
+
+
+def test_cosyvoice_engine_metadata(client):
+    resp = client.get("/v1/engines")
+    eng = next(e for e in resp.json() if e["id"] == "cosyvoice-3")
+    assert "CosyVoice" in eng["label"]
+    assert eng["capabilities"]["zero_shot"] is True
+    assert eng["capabilities"]["requires_gpu"] is True
+
+
+def test_indextts_engine_metadata(client):
+    resp = client.get("/v1/engines")
+    eng = next(e for e in resp.json() if e["id"] == "indextts-2")
+    assert "IndexTTS" in eng["label"]
+    assert eng["capabilities"]["zero_shot"] is True
+    assert eng["capabilities"]["requires_gpu"] is True
 
 
 def test_openvoice_engine_metadata(client):

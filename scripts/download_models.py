@@ -89,11 +89,121 @@ def download_rvc() -> None:
     print(f"Done. RVC assets cached via worker under {settings.models_dir}")
 
 
+def download_chatterbox() -> None:
+    import subprocess
+
+    settings = get_settings()
+    settings.models_dir.mkdir(parents=True, exist_ok=True)
+
+    python = settings.chatterbox_python
+    if python is None:
+        default = Path("/opt/chatterbox-venv/bin/python")
+        python = default if default.is_file() else None
+    worker = Path(__file__).resolve().parent / "chatterbox_worker.py"
+    if python is None or not worker.is_file():
+        print(
+            "Skipping Chatterbox download — set VOICEFORGE_CHATTERBOX_PYTHON "
+            "(see requirements-chatterbox.txt / /opt/chatterbox-venv)"
+        )
+        return
+
+    print("Downloading Chatterbox TTS via worker setup...")
+    subprocess.run(  # noqa: S603
+        [str(python), str(worker), "setup"],
+        check=True,
+    )
+    print(f"Done. Cached under {settings.models_dir}")
+
+
+def download_qwen3_tts() -> None:
+    settings = get_settings()
+    settings.models_dir.mkdir(parents=True, exist_ok=True)
+    os.environ.setdefault("HF_HOME", str(settings.models_dir))
+
+    print("Downloading Qwen3-TTS 1.7B Base (Apache-2.0)...")
+    import torch
+    from qwen_tts import Qwen3TTSModel
+
+    device_map = "cuda:0" if torch.cuda.is_available() else "cpu"
+    dtype = torch.bfloat16 if device_map.startswith("cuda") else torch.float32
+    Qwen3TTSModel.from_pretrained(
+        "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+        device_map=device_map,
+        dtype=dtype,
+    )
+    print(f"Done. Cached under {settings.models_dir}")
+
+
+def download_fish_speech() -> None:
+    print(
+        "Fish Speech uses a self-hosted sidecar — no weights are downloaded "
+        "into the VoiceForge process. Start fish-speech locally and set "
+        "VOICEFORGE_FISH_SPEECH_URL (see requirements-fish.txt)."
+    )
+
+
+def download_cosyvoice_3() -> None:
+    import subprocess
+
+    settings = get_settings()
+    settings.models_dir.mkdir(parents=True, exist_ok=True)
+
+    python = settings.cosyvoice_python
+    if python is None:
+        default = Path("/opt/cosyvoice-venv/bin/python")
+        python = default if default.is_file() else None
+    worker = Path(__file__).resolve().parent / "cosyvoice_worker.py"
+    if python is None or not worker.is_file():
+        print(
+            "Skipping CosyVoice download — set VOICEFORGE_COSYVOICE_PYTHON "
+            "(see requirements-cosyvoice.txt)"
+        )
+        return
+
+    print("Downloading Fun-CosyVoice3-0.5B via worker setup...")
+    subprocess.run(  # noqa: S603
+        [str(python), str(worker), "setup", "--models-dir", str(settings.models_dir)],
+        check=True,
+    )
+    print(f"Done. Cached under {settings.models_dir}")
+
+
+def download_indextts_2() -> None:
+    import subprocess
+
+    settings = get_settings()
+    settings.models_dir.mkdir(parents=True, exist_ok=True)
+
+    python = settings.indextts_python
+    if python is None:
+        default = Path("/opt/indextts-venv/bin/python")
+        python = default if default.is_file() else None
+    worker = Path(__file__).resolve().parent / "indextts_worker.py"
+    if python is None or not worker.is_file():
+        print(
+            "Skipping IndexTTS2 download — set VOICEFORGE_INDEXTTS_PYTHON "
+            "(see requirements-indextts.txt)"
+        )
+        return
+
+    print("Downloading IndexTTS-2 via worker setup...")
+    subprocess.run(  # noqa: S603
+        [str(python), str(worker), "setup", "--models-dir", str(settings.models_dir)],
+        check=True,
+    )
+    print(f"Done. Cached under {settings.models_dir}")
+
+
 ENGINES = {
     "xtts-v2": download_xtts_v2,
     "f5-tts": download_f5_tts,
     "openvoice-v2": download_openvoice_v2,
     "rvc": download_rvc,
+    "chatterbox": download_chatterbox,
+    "qwen3-tts": download_qwen3_tts,
+    "fish-speech": download_fish_speech,
+    "cosyvoice-3": download_cosyvoice_3,
+    "indextts-2": download_indextts_2,
 }
 
 
