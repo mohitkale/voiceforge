@@ -18,7 +18,7 @@ The capture may show local voice metadata from a maintainer machine. Recapture w
 
 | File | Status |
 |------|--------|
-| `docs/assets/engine-comparison.svg` | Illustrative diagram of multi-engine → one API (not a quality ranking). |
+| `docs/assets/engine-comparison.svg` | Inline-attribute SVG (GitHub-camo safe). README uses **Mermaid** for reliable rendering. |
 
 ## Audio samples
 

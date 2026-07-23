@@ -30,8 +30,7 @@ its own terms** — see [NOTICE.md](NOTICE.md) and
 
 [First clone guide](docs/FIRST_CLONE.md) ·
 [Engine matrix](docs/ENGINES.md) ·
-[Demo capture](docs/DEMO_CAPTURE.md) ·
-[Clone flow diagram](docs/clone-flow.svg)
+[Demo capture](docs/DEMO_CAPTURE.md)
 
 ### Audio examples
 
@@ -50,7 +49,33 @@ Do not treat any engine as universally “best” — quality depends on sample,
 language, and hardware. See [DEMO_CAPTURE.md](docs/DEMO_CAPTURE.md) to produce
 verified WAVs/MP3s for this table.
 
-![Multi-engine overview](docs/assets/engine-comparison.svg)
+### Multi-engine overview
+
+One Studio/API, many local engines. This is **not** a quality ranking — engines
+differ by licence, hardware, and verification status
+([docs/ENGINES.md](docs/ENGINES.md)).
+
+```mermaid
+flowchart LR
+  subgraph Clients
+    A[Studio / curl / Reel Studio]
+  end
+
+  subgraph VoiceForge
+    B[FastAPI + CloneEngine registry]
+  end
+
+  subgraph Engines
+    C1[openvoice-v2<br/>CPU starter]
+    C2[f5-tts / xtts-v2<br/>chatterbox / qwen3-tts]
+    C3[rvc / fish-speech<br/>cosyvoice-3 / indextts-2]
+  end
+
+  A -->|HTTP + SSE| B
+  B --> C1
+  B --> C2
+  B --> C3
+```
 
 ## How it works
 
@@ -61,12 +86,21 @@ verified WAVs/MP3s for this table.
 5. **Synthesize** text → WAV on your infrastructure.
 6. **Delete** the voice anytime (`DELETE /v1/voices/{id}` removes samples + artifacts).
 
+```mermaid
+flowchart TD
+  U[Upload or record sample] --> P[Validate + preprocess]
+  P --> C{consent=true?}
+  C -->|no| X[Reject 422]
+  C -->|yes| V[create_voice on selected engine]
+  V --> R[Voice ready · SSE progress]
+  R --> S[POST /v1/synthesize]
+  S --> W[Optional watermark]
+  W --> O[audio/wav bytes]
+  R --> D[DELETE voice · wipe samples + artifacts]
 ```
-Client (Studio · curl · Reel Studio · your app)
-        │  HTTP (+ SSE progress)
-        ▼
-VoiceForge API  →  selected CloneEngine  →  WAV
-```
+
+SVG copies (open as files if you prefer): [clone flow](docs/clone-flow.svg) ·
+[engine comparison](docs/assets/engine-comparison.svg)
 
 ## Responsible use
 
@@ -200,8 +234,11 @@ Interactive docs: `/docs`. Configuration: `.env.example` (`VOICEFORGE_*`).
 
 VoiceForge stays audio-only. Reel Studio (or any client) calls HTTP:
 
-```
-Reel Studio → VoiceForge API → local engine → WAV
+```mermaid
+flowchart LR
+  RS[Reel Studio<br/>scripts · scenes · video] -->|HTTP| VF[VoiceForge API]
+  VF --> E[Selected local engine]
+  E --> WAV[WAV audio]
 ```
 
 See **[docs/REEL_STUDIO.md](docs/REEL_STUDIO.md)**. VoiceForge remains usable with
@@ -222,11 +259,44 @@ substitute for consent. **[docs/WATERMARKING.md](docs/WATERMARKING.md)**
 
 ## Architecture
 
-![System architecture](docs/architecture.svg)
-
 Single FastAPI process, SQLite metadata, `data/` for samples/artifacts. Optional
 engines run in isolated workers or a Fish Speech sidecar when dependency pins
 conflict.
+
+```mermaid
+flowchart TB
+  subgraph Clients
+    CLI[Studio / curl / custom apps]
+  end
+
+  subgraph Service["VoiceForge process"]
+    API[FastAPI<br/>voices · synth · engines · SSE · metrics]
+    REG[Engine registry]
+    JOBS[Background jobs]
+    API --> REG
+    API --> JOBS
+  end
+
+  subgraph Storage
+    DB[(SQLite)]
+    DISK[data/voices · samples · artifacts]
+  end
+
+  subgraph EngineLayer["Engines"]
+    INPROC[In-process<br/>openvoice · f5 · xtts · qwen3]
+    WORKER[Isolated workers<br/>rvc · chatterbox · cosyvoice · indextts]
+    SIDE[Fish Speech sidecar]
+  end
+
+  CLI -->|REST + SSE| API
+  API --> DB
+  API --> DISK
+  REG --> INPROC
+  REG --> WORKER
+  REG --> SIDE
+```
+
+SVG: [docs/architecture.svg](docs/architecture.svg) · [docs/clone-flow.svg](docs/clone-flow.svg)
 
 ### `CloneEngine` interface
 

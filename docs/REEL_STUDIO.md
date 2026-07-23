@@ -4,6 +4,13 @@ VoiceForge is a **standalone** HTTP voice-cloning service. Reel Studio (or any
 app) talks to it over REST + SSE. No shared process and no merged Docker Compose
 are required.
 
+```mermaid
+flowchart LR
+  RS[Reel Studio<br/>scripts · scenes · video] -->|HTTP + optional SSE| VF[VoiceForge API]
+  VF --> E[Selected local engine]
+  E --> WAV[WAV audio]
+```
+
 ```
 Reel Studio (scripts, scenes, video)
         │  HTTP (+ optional SSE)

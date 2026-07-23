@@ -2,62 +2,54 @@
   <title id="title">VoiceForge Clone Flow</title>
   <desc id="desc">End-to-end flow from sample upload through voice creation to WAV synthesis.</desc>
   <defs>
-    <style>
-      .bg { fill: #0d1323; }
-      .step { fill: #182540; stroke: #4f6fa8; stroke-width: 2; rx: 12; }
-      .title { fill: #ffffff; font: 700 28px 'Segoe UI', Arial, sans-serif; }
-      .label { fill: #e7eefb; font: 600 17px 'Segoe UI', Arial, sans-serif; }
-      .small { fill: #b7c7e4; font: 14px 'Segoe UI', Arial, sans-serif; }
-      .arrow { stroke: #88b0ff; stroke-width: 3; fill: none; marker-end: url(#m2); }
-    </style>
-    <marker id="m2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#88b0ff" />
+    <marker id="m2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#88b0ff"/>
     </marker>
   </defs>
 
-  <rect class="bg" x="0" y="0" width="1200" height="620" />
-  <text class="title" x="40" y="52">VoiceForge: Clone and Synthesize Flow</text>
+  <rect x="0" y="0" width="1200" height="620" fill="#0d1323"/>
+  <text x="40" y="52" fill="#ffffff" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="28" font-weight="700">VoiceForge: Clone and Synthesize Flow</text>
 
-  <rect class="step" x="50" y="110" width="220" height="120" />
-  <text class="label" x="72" y="150">1. Upload Samples</text>
-  <text class="small" x="72" y="178">POST /v1/voices</text>
-  <text class="small" x="72" y="198">consent + engine_id + tier</text>
+  <rect x="50" y="110" width="220" height="120" rx="12" fill="#182540" stroke="#4f6fa8" stroke-width="2"/>
+  <text x="72" y="150" fill="#e7eefb" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="600">1. Upload Samples</text>
+  <text x="72" y="178" fill="#b7c7e4" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14">POST /v1/voices</text>
+  <text x="72" y="198" fill="#b7c7e4" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14">consent + engine_id + tier</text>
 
-  <rect class="step" x="330" y="110" width="230" height="120" />
-  <text class="label" x="352" y="150">2. Preprocess</text>
-  <text class="small" x="352" y="178">Validate audio, trim silence</text>
-  <text class="small" x="352" y="198">Normalize + store under data/</text>
+  <rect x="330" y="110" width="230" height="120" rx="12" fill="#182540" stroke="#4f6fa8" stroke-width="2"/>
+  <text x="352" y="150" fill="#e7eefb" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="600">2. Preprocess</text>
+  <text x="352" y="178" fill="#b7c7e4" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14">Validate audio, trim silence</text>
+  <text x="352" y="198" fill="#b7c7e4" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14">Normalize + store under data/</text>
 
-  <rect class="step" x="620" y="110" width="240" height="120" />
-  <text class="label" x="642" y="150">3. create_voice</text>
-  <text class="small" x="642" y="178">Engine extracts embedding</text>
-  <text class="small" x="642" y="198">ASR ref_text when required</text>
+  <rect x="620" y="110" width="240" height="120" rx="12" fill="#182540" stroke="#4f6fa8" stroke-width="2"/>
+  <text x="642" y="150" fill="#e7eefb" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="600">3. create_voice</text>
+  <text x="642" y="178" fill="#b7c7e4" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14">Engine extracts embedding</text>
+  <text x="642" y="198" fill="#b7c7e4" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14">ASR ref_text when required</text>
 
-  <rect class="step" x="920" y="110" width="230" height="120" />
-  <text class="label" x="942" y="150">4. Voice Artifact</text>
-  <text class="small" x="942" y="178">Cached latents / ref paths</text>
-  <text class="small" x="942" y="198">status ’ ready (SSE)</text>
+  <rect x="920" y="110" width="230" height="120" rx="12" fill="#182540" stroke="#4f6fa8" stroke-width="2"/>
+  <text x="942" y="150" fill="#e7eefb" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="600">4. Voice Artifact</text>
+  <text x="942" y="178" fill="#b7c7e4" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14">Cached latents / ref paths</text>
+  <text x="942" y="198" fill="#b7c7e4" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14">status = ready (SSE)</text>
 
-  <rect class="step" x="170" y="320" width="280" height="130" />
-  <text class="label" x="192" y="360">5. POST /v1/synthesize</text>
-  <text class="small" x="192" y="388">voiceId + text + options</text>
-  <text class="small" x="192" y="408">Semaphore-limited ML job</text>
+  <rect x="170" y="320" width="280" height="130" rx="12" fill="#182540" stroke="#4f6fa8" stroke-width="2"/>
+  <text x="192" y="360" fill="#e7eefb" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="600">5. POST /v1/synthesize</text>
+  <text x="192" y="388" fill="#b7c7e4" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14">voiceId + text + options</text>
+  <text x="192" y="408" fill="#b7c7e4" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14">Semaphore-limited ML job</text>
 
-  <rect class="step" x="520" y="320" width="280" height="130" />
-  <text class="label" x="542" y="360">6. Engine.synthesize</text>
-  <text class="small" x="542" y="388">In-process or worker venv</text>
-  <text class="small" x="542" y="408">Returns 16-bit PCM WAV</text>
+  <rect x="520" y="320" width="280" height="130" rx="12" fill="#182540" stroke="#4f6fa8" stroke-width="2"/>
+  <text x="542" y="360" fill="#e7eefb" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="600">6. Engine.synthesize</text>
+  <text x="542" y="388" fill="#b7c7e4" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14">In-process or worker venv</text>
+  <text x="542" y="408" fill="#b7c7e4" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14">Returns 16-bit PCM WAV</text>
 
-  <rect class="step" x="870" y="320" width="260" height="130" />
-  <text class="label" x="892" y="360">7. Optional Watermark</text>
-  <text class="small" x="892" y="388">Quiet voice fingerprint</text>
-  <text class="small" x="892" y="408">audio/wav response bytes</text>
+  <rect x="870" y="320" width="260" height="130" rx="12" fill="#182540" stroke="#4f6fa8" stroke-width="2"/>
+  <text x="892" y="360" fill="#e7eefb" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="600">7. Optional Watermark</text>
+  <text x="892" y="388" fill="#b7c7e4" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14">Quiet voice fingerprint</text>
+  <text x="892" y="408" fill="#b7c7e4" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14">audio/wav response bytes</text>
 
-  <path class="arrow" d="M 270 170 L 330 170" />
-  <path class="arrow" d="M 560 170 L 620 170" />
-  <path class="arrow" d="M 860 170 L 920 170" />
-  <path class="arrow" d="M 1035 230 L 1035 320" />
-  <path class="arrow" d="M 870 385 L 800 385" />
-  <path class="arrow" d="M 520 385 L 450 385" />
-  <path class="arrow" d="M 310 320 L 310 230" />
+  <path d="M 270 170 L 330 170" stroke="#88b0ff" stroke-width="3" fill="none" marker-end="url(#m2)"/>
+  <path d="M 560 170 L 620 170" stroke="#88b0ff" stroke-width="3" fill="none" marker-end="url(#m2)"/>
+  <path d="M 860 170 L 920 170" stroke="#88b0ff" stroke-width="3" fill="none" marker-end="url(#m2)"/>
+  <path d="M 1035 230 L 1035 320" stroke="#88b0ff" stroke-width="3" fill="none" marker-end="url(#m2)"/>
+  <path d="M 870 385 L 800 385" stroke="#88b0ff" stroke-width="3" fill="none" marker-end="url(#m2)"/>
+  <path d="M 520 385 L 450 385" stroke="#88b0ff" stroke-width="3" fill="none" marker-end="url(#m2)"/>
+  <path d="M 310 320 L 310 230" stroke="#88b0ff" stroke-width="3" fill="none"/>
 </svg>
