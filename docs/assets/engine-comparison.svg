@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="420" viewBox="0 0 960 420" role="img" aria-labelledby="title desc">
+  <title id="title">VoiceForge multi-engine architecture</title>
+  <desc id="desc">One Studio and API selecting among multiple local cloning engines.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1220"/>
+      <stop offset="100%" stop-color="#152038"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="420" rx="16" fill="url(#bg)"/>
+  <text x="48" y="52" fill="#e6edf7" font-family="DM Sans, Helvetica, Arial, sans-serif" font-size="26" font-weight="700">One API · multiple local engines</text>
+  <text x="48" y="82" fill="#b6c3db" font-family="DM Sans, Helvetica, Arial, sans-serif" font-size="15">Switch engines per voice without rebuilding your workflow</text>
+
+  <rect x="48" y="120" width="200" height="72" rx="12" fill="#131c2f" stroke="#2d3d63"/>
+  <text x="148" y="152" text-anchor="middle" fill="#e6edf7" font-family="DM Sans, Helvetica, Arial, sans-serif" font-size="16" font-weight="600">Studio / curl</text>
+  <text x="148" y="174" text-anchor="middle" fill="#86a8e7" font-family="IBM Plex Mono, monospace" font-size="12">clients</text>
+
+  <path d="M248 156 H310" stroke="#5b8def" stroke-width="3" marker-end="url(#arrow)"/>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#5b8def"/>
+    </marker>
+  </defs>
+
+  <rect x="310" y="112" width="220" height="88" rx="12" fill="#1b2945" stroke="#5b8def"/>
+  <text x="420" y="148" text-anchor="middle" fill="#e6edf7" font-family="DM Sans, Helvetica, Arial, sans-serif" font-size="17" font-weight="600">VoiceForge API</text>
+  <text x="420" y="172" text-anchor="middle" fill="#b6c3db" font-family="IBM Plex Mono, monospace" font-size="12">CloneEngine registry</text>
+
+  <path d="M530 156 H590" stroke="#5b8def" stroke-width="3"/>
+
+  <g font-family="DM Sans, Helvetica, Arial, sans-serif" font-size="13" fill="#e6edf7">
+    <rect x="590" y="70" width="320" height="36" rx="8" fill="#131c2f" stroke="#2d3d63"/>
+    <text x="606" y="93">openvoice-v2 · CPU starter</text>
+    <rect x="590" y="116" width="320" height="36" rx="8" fill="#131c2f" stroke="#2d3d63"/>
+    <text x="606" y="139">f5-tts · xtts-v2 · chatterbox · qwen3-tts</text>
+    <rect x="590" y="162" width="320" height="36" rx="8" fill="#131c2f" stroke="#2d3d63"/>
+    <text x="606" y="185">rvc · fish-speech · cosyvoice-3 · indextts-2</text>
+  </g>
+
+  <rect x="48" y="250" width="864" height="120" rx="12" fill="#131c2f" stroke="#2d3d63"/>
+  <text x="72" y="288" fill="#e6edf7" font-family="DM Sans, Helvetica, Arial, sans-serif" font-size="16" font-weight="600">Not a quality ranking</text>
+  <text x="72" y="318" fill="#b6c3db" font-family="DM Sans, Helvetica, Arial, sans-serif" font-size="14">Engines differ in licence, CPU/GPU needs, and verification status.</text>
+  <text x="72" y="344" fill="#86a8e7" font-family="IBM Plex Mono, monospace" font-size="13">See docs/ENGINES.md · Consent required on every clone</text>
+</svg>
