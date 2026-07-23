@@ -256,11 +256,11 @@
       <section class="panel">
         <h2>1. Clone</h2>
         <label for="token">API token <span id="tokenRequired" style="color:var(--warn)"></span></label>
-        <input id="token" type="password" placeholder="Paste VOICEFORGE_API_TOKEN from Modal secrets" autocomplete="off" />
+        <input id="token" type="password" placeholder="VOICEFORGE_API_TOKEN (if configured)" autocomplete="off" />
         <p class="hint warn" id="authHint" hidden>
-          This deployment requires a bearer token. Paste the same value you set in
-          <code>modal secret create voiceforge-secrets</code>, then engines and
-          voices will load. No voices exist until you clone one.
+          This deployment requires a bearer token. Paste the same value as
+          <code>VOICEFORGE_API_TOKEN</code>, then engines and voices will load.
+          Leave empty only when the API is running without a token (pure localhost).
         </p>
 
         <label for="voiceName">Voice name</label>
@@ -308,11 +308,20 @@
           <audio id="recPreview" controls style="display:none"></audio>
         </div>
 
+        <label class="consent" for="consent" style="display:flex;gap:0.55rem;align-items:flex-start;margin:1rem 0 0.35rem;color:var(--text);font-size:0.9rem;line-height:1.4">
+          <input id="consent" type="checkbox" style="margin-top:0.2rem;width:auto" />
+          <span>
+            I confirm I own this voice or have clear permission to clone it.
+            VoiceForge records this declaration — it does not verify identity.
+            See <a href="https://github.com/mohitkale/voiceforge/blob/main/RESPONSIBLE_USE.md" target="_blank" rel="noopener">responsible use</a>.
+          </span>
+        </label>
+
         <p class="hint">
           All supported engines are listed below. <strong>ready</strong> means
-          bundled in this deployment; <em>not in this deployment</em> means you
-          can clone with it elsewhere (Docker GPU) but not here. Failed voices
-          in the list are usually old attempts — delete them.
+          usable in this process; other labels mean extra install, GPU, or a
+          sidecar is required. Start with <code>openvoice-v2</code> on CPU.
+          Failed voices in the list are usually old attempts — delete them.
         </p>
 
         <div class="engines" id="engines"></div>
@@ -346,7 +355,7 @@
 
   <script>
     const $ = (id) => document.getElementById(id);
-    const state = { engineId: "qwen3-tts", voices: [], sampleSource: "upload", recordedFile: null };
+    const state = { engineId: "openvoice-v2", voices: [], sampleSource: "upload", recordedFile: null };
 
     const SCRIPTS = [
       "Good morning. Today the weather is nice and sunny. I am going to the market to buy some vegetables and fruits. After that, I will have a cup of chai with my friends.",
@@ -439,37 +448,45 @@
     }
 
     async function loadEngines() {
-      if (!token()) {
-        showAuthHint(true);
-        showEnginesPlaceholder("Paste your API token above, then click Refresh engines.");
-        return;
-      }
-      const res = await api("/v1/engines", { headers: headers() });
-      const engines = await res.json();
-      showAuthHint(false);
-      const root = $("engines");
-      root.innerHTML = "";
-      for (const e of engines) {
-        const pill = statusPill(e);
-        const div = document.createElement("div");
-        div.className = "engine" + (e.id === state.engineId ? " selected" : "");
-        div.innerHTML = `
+      try {
+        const res = await api("/v1/engines", { headers: headers() });
+        const engines = await res.json();
+        showAuthHint(false);
+        const root = $("engines");
+        root.innerHTML = "";
+        for (const e of engines) {
+          const pill = statusPill(e);
+          const div = document.createElement("div");
+          div.className = "engine" + (e.id === state.engineId ? " selected" : "");
+          const starter =
+            e.id === "openvoice-v2"
+              ? ' <span style="color:var(--accent);font-size:0.75rem">CPU starter</span>'
+              : "";
+          div.innerHTML = `
           <div>
-            <div class="label">${e.label}${e.id === "qwen3-tts" ? ' <span style="color:var(--accent);font-size:0.75rem">recommended</span>' : ""}</div>
+            <div class="label">${e.label}${starter}</div>
             <div class="id">${e.id}</div>
           </div>
           <span class="pill ${pill.cls}">${pill.text}</span>
         `;
-        div.addEventListener("click", () => {
-          state.engineId = e.id;
-          [...root.children].forEach((c) => c.classList.remove("selected"));
-          div.classList.add("selected");
-          if (e.id === "rvc") $("tier").value = "high_fidelity";
-          if (!e.ready) {
-            log(`${e.id} is not ready in this container (${pill.text}). Use a ready engine, or rebuild/configure as documented.`);
-          }
-        });
-        root.appendChild(div);
+          div.addEventListener("click", () => {
+            state.engineId = e.id;
+            [...root.children].forEach((c) => c.classList.remove("selected"));
+            div.classList.add("selected");
+            if (e.id === "rvc") $("tier").value = "high_fidelity";
+            if (!e.ready) {
+              log(`${e.id} is not ready in this container (${pill.text}). Use a ready engine, or rebuild/configure as documented.`);
+            }
+          });
+          root.appendChild(div);
+        }
+      } catch (err) {
+        if (isAuthError(err)) {
+          showAuthHint(true);
+          showEnginesPlaceholder("Paste your API token above, then click Refresh engines.");
+          return;
+        }
+        throw err;
       }
     }
 
@@ -521,12 +538,17 @@
     }
 
     async function loadVoices() {
-      if (!token()) {
-        return;
+      try {
+        const res = await api("/v1/voices", { headers: headers() });
+        state.voices = await res.json();
+        renderVoices();
+      } catch (err) {
+        if (isAuthError(err)) {
+          showAuthHint(true);
+          return;
+        }
+        throw err;
       }
-      const res = await api("/v1/voices", { headers: headers() });
-      state.voices = await res.json();
-      renderVoices();
     }
 
     async function pollVoice(id) {
@@ -704,6 +726,10 @@
         );
         return;
       }
+      if (!$("consent").checked) {
+        log("Confirm consent before cloning — only clone voices you own or have permission to use.");
+        return;
+      }
       $("cloneBtn").disabled = true;
       try {
         const fd = new FormData();
@@ -759,19 +785,14 @@
 
     async function reloadAfterToken() {
       localStorage.setItem("voiceforge_token", token());
-      if (!token()) {
-        showAuthHint(true);
-        showEnginesPlaceholder("Paste your API token above, then click Refresh engines.");
-        return;
-      }
       try {
         await loadEngines();
         await loadVoices();
-        log("Token saved — loaded engines and voices.");
+        log(token() ? "Token saved — loaded engines and voices." : "Loaded engines and voices (no token).");
       } catch (err) {
         if (isAuthError(err)) {
           showAuthHint(true);
-          showEnginesPlaceholder("Invalid or missing token — check Modal secret value.");
+          showEnginesPlaceholder("Invalid or missing token — check VOICEFORGE_API_TOKEN.");
         }
         log(err.message);
       }
@@ -789,13 +810,7 @@
 
     (async function init() {
       $("token").value = localStorage.getItem("voiceforge_token") || "";
-      const jobs = [loadHealth()];
-      if (token()) {
-        jobs.push(loadEngines(), loadVoices());
-      } else {
-        showAuthHint(true);
-        showEnginesPlaceholder("Paste your API token above, then click Refresh engines.");
-      }
+      const jobs = [loadHealth(), loadEngines(), loadVoices()];
       try {
         await Promise.all(jobs);
       } catch (err) {
