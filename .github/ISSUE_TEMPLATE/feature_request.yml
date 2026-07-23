@@ -1,0 +1,30 @@
+name: Feature request
+description: Suggest an improvement to VoiceForge
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For new speech engines, use the **Engine request** template instead.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user problem does this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Describe the change without attaching private audio or tokens.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: This request does not require shipping third-party voice samples or secrets
+          required: true
