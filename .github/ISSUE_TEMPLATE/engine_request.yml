@@ -1,0 +1,94 @@
+name: Engine request
+description: Propose adding a new cloning / TTS engine adapter
+title: "[engine] "
+labels: ["engine"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Adapters are not “supported” merely because code exists. Include licence and hardware facts.
+        Do not attach model weights, private samples, or tokens.
+  - type: input
+    id: repo
+    attributes:
+      label: Engine repository / homepage
+    validations:
+      required: true
+  - type: textarea
+    id: impl_license
+    attributes:
+      label: Implementation licence
+      description: Licence of the engine software / library.
+    validations:
+      required: true
+  - type: textarea
+    id: model_license
+    attributes:
+      label: Model-weight licence
+      description: Include commercial-use restrictions if any.
+    validations:
+      required: true
+  - type: textarea
+    id: hardware
+    attributes:
+      label: Hardware requirements
+      description: CPU viability, GPU/VRAM needs, disk size.
+    validations:
+      required: true
+  - type: dropdown
+    id: commercial
+    attributes:
+      label: Commercial-use status (as you understand it)
+      options:
+        - Permissive / generally allowed (confirm upstream)
+        - Non-commercial / research only
+        - Unclear — needs review
+        - Forbidden for our intended use
+    validations:
+      required: true
+  - type: textarea
+    id: install
+    attributes:
+      label: Installation method
+      description: pip, git, Docker sidecar, isolated venv, etc.
+    validations:
+      required: true
+  - type: textarea
+    id: api
+    attributes:
+      label: API or Python interface
+      description: How VoiceForge would call clone + synth.
+    validations:
+      required: true
+  - type: textarea
+    id: test_model
+    attributes:
+      label: Test model availability
+      description: Can CI use a tiny fixture? Any redistribution limits?
+  - type: dropdown
+    id: isolation
+    attributes:
+      label: Isolation required?
+      options:
+        - No (fits main venv)
+        - Yes (isolated worker venv)
+        - Yes (HTTP sidecar)
+        - Unknown
+  - type: textarea
+    id: languages
+    attributes:
+      label: Expected language support
+  - type: textarea
+    id: benchmarks
+    attributes:
+      label: Source of any quality/speed claims
+      description: Links only — do not invent numbers.
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have not attached model weights, private audio, or API tokens
+          required: true
+        - label: I understand VoiceForge will document this engine’s licence separately from MIT app code
+          required: true

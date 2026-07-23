@@ -2,70 +2,52 @@
   <title id="title">VoiceForge Architecture</title>
   <desc id="desc">High-level architecture showing HTTP clients, FastAPI service, engine registry, cloning engines, SQLite, and local storage.</desc>
   <defs>
-    <style>
-      .bg { fill: #0b1220; }
-      .panel { fill: #131c2f; stroke: #2d3d63; stroke-width: 2; rx: 12; }
-      .box { fill: #1b2945; stroke: #4b6aa5; stroke-width: 2; rx: 10; }
-      .label { fill: #e6edf7; font: 600 17px 'Segoe UI', Arial, sans-serif; }
-      .small { fill: #b6c3db; font: 13px 'Segoe UI', Arial, sans-serif; }
-      .arrow { stroke: #86a8e7; stroke-width: 3; fill: none; marker-end: url(#m); }
-      .title { fill: #ffffff; font: 700 28px 'Segoe UI', Arial, sans-serif; }
-    </style>
-    <marker id="m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#86a8e7" />
+    <marker id="m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#86a8e7"/>
     </marker>
   </defs>
 
-  <rect class="bg" x="0" y="0" width="1200" height="820" />
-  <text class="title" x="40" y="52">VoiceForge: System Architecture</text>
+  <rect x="0" y="0" width="1200" height="820" fill="#0b1220"/>
+  <text x="40" y="52" fill="#ffffff" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="28" font-weight="700">VoiceForge: System Architecture</text>
 
-  <rect class="panel" x="40" y="80" width="1120" height="700" />
+  <rect x="40" y="80" width="1120" height="700" rx="12" fill="#131c2f" stroke="#2d3d63" stroke-width="2"/>
 
-  <rect class="box" x="70" y="120" width="280" height="130" />
-  <text class="label" x="95" y="165">HTTP Clients</text>
-  <text class="small" x="95" y="195">Reel Studio / curl / custom apps</text>
-  <text class="small" x="95" y="218">REST + SSE (Bearer auth)</text>
+  <rect x="70" y="120" width="280" height="130" rx="10" fill="#1b2945" stroke="#4b6aa5" stroke-width="2"/>
+  <text x="95" y="165" fill="#e6edf7" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="600">HTTP Clients</text>
+  <text x="95" y="195" fill="#b6c3db" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13">Reel Studio / curl / custom apps</text>
+  <text x="95" y="218" fill="#b6c3db" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13">REST + SSE (Bearer auth)</text>
 
-  <rect class="box" x="420" y="110" width="360" height="150" />
-  <text class="label" x="445" y="150">FastAPI Service</text>
-  <text class="small" x="445" y="180">/v1/voices, /v1/synthesize, /v1/engines</text>
-  <text class="small" x="445" y="203">Jobs queue + SSE progress</text>
-  <text class="small" x="445" y="226">Preprocess, watermark, metrics</text>
+  <rect x="420" y="110" width="360" height="150" rx="10" fill="#1b2945" stroke="#4b6aa5" stroke-width="2"/>
+  <text x="445" y="150" fill="#e6edf7" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="600">FastAPI Service</text>
+  <text x="445" y="180" fill="#b6c3db" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13">/v1/voices, /v1/synthesize, /v1/engines</text>
+  <text x="445" y="203" fill="#b6c3db" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13">Jobs queue + SSE progress</text>
+  <text x="445" y="226" fill="#b6c3db" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13">Preprocess, watermark, metrics</text>
 
-  <rect class="box" x="850" y="120" width="270" height="130" />
-  <text class="label" x="875" y="165">Engine Registry</text>
-  <text class="small" x="875" y="195">CloneEngine protocol</text>
-  <text class="small" x="875" y="218">Lazy singletons per engine id</text>
+  <rect x="850" y="120" width="270" height="130" rx="10" fill="#1b2945" stroke="#4b6aa5" stroke-width="2"/>
+  <text x="875" y="165" fill="#e6edf7" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="600">Engine Registry</text>
+  <text x="875" y="195" fill="#b6c3db" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13">CloneEngine protocol</text>
+  <text x="875" y="218" fill="#b6c3db" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13">Lazy singletons per engine id</text>
 
-  <rect class="box" x="70" y="320" width="1060" height="250" />
-  <text class="label" x="95" y="360">Cloning Engines (pluggable)</text>
-  <text class="small" x="95" y="390">In-process: xtts-v2 · f5-tts · openvoice-v2 · chatterbox · qwen3-tts · fish-speech</text>
-  <text class="small" x="95" y="418">Isolated workers: rvc · cosyvoice-3 · indextts-2</text>
-  <text class="small" x="95" y="446">Zero-shot instant tier + high-fidelity (RVC) behind one interface</text>
-  <text class="small" x="95" y="474">Optional extras  is_ready() false until deps / worker venv present</text>
-  <text class="small" x="95" y="502">Checkpoints cached under models/; artifacts under data/voices/</text>
-  <text class="small" x="95" y="530">Licenses vary per engine  see NOTICE.md and GET /v1/engines</text>
+  <path d="M350 185 H420" stroke="#86a8e7" stroke-width="3" fill="none" marker-end="url(#m)"/>
+  <path d="M780 185 H850" stroke="#86a8e7" stroke-width="3" fill="none" marker-end="url(#m)"/>
 
-  <rect class="box" x="70" y="620" width="320" height="110" />
-  <text class="label" x="95" y="665">SQLite</text>
-  <text class="small" x="95" y="695">Voice metadata, status, errors</text>
+  <rect x="70" y="320" width="1060" height="250" rx="10" fill="#1b2945" stroke="#4b6aa5" stroke-width="2"/>
+  <text x="95" y="360" fill="#e6edf7" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="600">Cloning Engines</text>
+  <text x="95" y="390" fill="#b6c3db" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13">In-process: openvoice-v2 · f5-tts · xtts-v2 · qwen3-tts</text>
+  <text x="95" y="418" fill="#b6c3db" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13">Workers: rvc · chatterbox · cosyvoice-3 · indextts-2</text>
+  <text x="95" y="446" fill="#b6c3db" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13">Sidecar: fish-speech (VOICEFORGE_FISH_SPEECH_URL)</text>
+  <text x="95" y="484" fill="#86a8e7" font-family="Menlo, Consolas, monospace" font-size="13">Consent required · licences vary per model — see NOTICE.md</text>
 
-  <rect class="box" x="440" y="620" width="320" height="110" />
-  <text class="label" x="465" y="665">Local Asset Store (data/)</text>
-  <text class="small" x="465" y="695">Samples, artifacts, previews</text>
+  <rect x="70" y="610" width="480" height="130" rx="10" fill="#1b2945" stroke="#4b6aa5" stroke-width="2"/>
+  <text x="95" y="655" fill="#e6edf7" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="600">SQLite</text>
+  <text x="95" y="685" fill="#b6c3db" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13">voices · samples metadata · consent flag</text>
 
-  <rect class="box" x="810" y="620" width="320" height="110" />
-  <text class="label" x="835" y="665">Model Cache (models/)</text>
-  <text class="small" x="835" y="695">HF / Coqui / worker checkpoints</text>
+  <rect x="610" y="610" width="520" height="130" rx="10" fill="#1b2945" stroke="#4b6aa5" stroke-width="2"/>
+  <text x="635" y="655" fill="#e6edf7" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="600">Local disk</text>
+  <text x="635" y="685" fill="#b6c3db" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13">data/voices/{id}/samples · artifacts · preview.wav</text>
+  <text x="635" y="710" fill="#b6c3db" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13">models/ or Docker models-cache volume</text>
 
-  <path class="arrow" d="M 350 185 L 420 185" />
-  <path class="arrow" d="M 780 185 L 850 185" />
-  <path class="arrow" d="M 985 250 L 985 320" />
-  <path class="arrow" d="M 600 260 L 600 320" />
-  <path class="arrow" d="M 230 570 L 230 620" />
-  <path class="arrow" d="M 600 570 L 600 620" />
-  <path class="arrow" d="M 970 570 L 970 620" />
-
-  <text class="small" x="360" y="173">HTTP + SSE</text>
-  <text class="small" x="790" y="173">get_engine()</text>
+  <path d="M600 250 V320" stroke="#86a8e7" stroke-width="3" fill="none" marker-end="url(#m)"/>
+  <path d="M310 570 V610" stroke="#86a8e7" stroke-width="3" fill="none" marker-end="url(#m)"/>
+  <path d="M870 570 V610" stroke="#86a8e7" stroke-width="3" fill="none" marker-end="url(#m)"/>
 </svg>

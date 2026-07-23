@@ -52,3 +52,5 @@ automated e2e tests (not a recording of a real person).
 Voice cloning can produce convincing audio of real people. Only clone voices
 you have the legal right to clone. This project requires `consent=true` on
 voice creation; that is an application control, not a substitute for law.
+
+See [RESPONSIBLE_USE.md](RESPONSIBLE_USE.md) and [docs/CONSENT.md](docs/CONSENT.md).

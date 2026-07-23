@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="420" viewBox="0 0 960 420" role="img" aria-labelledby="title desc">
+  <title id="title">VoiceForge multi-engine architecture</title>
+  <desc id="desc">One Studio and API selecting among multiple local cloning engines.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5b8def"/>
+    </marker>
+  </defs>
+  <rect width="960" height="420" rx="16" fill="#0b1220"/>
+  <text x="48" y="52" fill="#e6edf7" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="26" font-weight="700">One API · multiple local engines</text>
+  <text x="48" y="82" fill="#b6c3db" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="15">Switch engines per voice without rebuilding your workflow</text>
+
+  <rect x="48" y="120" width="200" height="72" rx="12" fill="#131c2f" stroke="#2d3d63" stroke-width="2"/>
+  <text x="148" y="152" text-anchor="middle" fill="#e6edf7" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" font-weight="600">Studio / curl</text>
+  <text x="148" y="174" text-anchor="middle" fill="#86a8e7" font-family="Menlo, Consolas, monospace" font-size="12">clients</text>
+
+  <path d="M248 156 H310" stroke="#5b8def" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+
+  <rect x="310" y="112" width="220" height="88" rx="12" fill="#1b2945" stroke="#5b8def" stroke-width="2"/>
+  <text x="420" y="148" text-anchor="middle" fill="#e6edf7" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="600">VoiceForge API</text>
+  <text x="420" y="172" text-anchor="middle" fill="#b6c3db" font-family="Menlo, Consolas, monospace" font-size="12">CloneEngine registry</text>
+
+  <path d="M530 156 H590" stroke="#5b8def" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+
+  <rect x="590" y="70" width="320" height="36" rx="8" fill="#131c2f" stroke="#2d3d63" stroke-width="2"/>
+  <text x="606" y="93" fill="#e6edf7" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13">openvoice-v2 · CPU starter</text>
+  <rect x="590" y="116" width="320" height="36" rx="8" fill="#131c2f" stroke="#2d3d63" stroke-width="2"/>
+  <text x="606" y="139" fill="#e6edf7" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13">f5-tts · xtts-v2 · chatterbox · qwen3-tts</text>
+  <rect x="590" y="162" width="320" height="36" rx="8" fill="#131c2f" stroke="#2d3d63" stroke-width="2"/>
+  <text x="606" y="185" fill="#e6edf7" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13">rvc · fish-speech · cosyvoice-3 · indextts-2</text>
+
+  <rect x="48" y="250" width="864" height="120" rx="12" fill="#131c2f" stroke="#2d3d63" stroke-width="2"/>
+  <text x="72" y="288" fill="#e6edf7" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" font-weight="600">Not a quality ranking</text>
+  <text x="72" y="318" fill="#b6c3db" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14">Engines differ in licence, CPU/GPU needs, and verification status.</text>
+  <text x="72" y="344" fill="#86a8e7" font-family="Menlo, Consolas, monospace" font-size="13">See docs/ENGINES.md · Consent required on every clone</text>
+</svg>

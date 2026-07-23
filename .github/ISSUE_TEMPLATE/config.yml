@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security report
+    url: https://github.com/mohitkale/voiceforge/blob/main/SECURITY.md
+    about: Report vulnerabilities privately — do not open a public issue with secrets or voice samples.
+  - name: Responsible use
+    url: https://github.com/mohitkale/voiceforge/blob/main/RESPONSIBLE_USE.md
+    about: Read before filing issues about cloning, consent, or misuse.

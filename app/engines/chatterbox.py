@@ -24,8 +24,8 @@ from app.engines.base import (
     Tier,
     VoiceArtifact,
 )
-from app.engines.wav_output import to_wav_bytes
 from app.engines.chatterbox_daemon import synthesize_via_daemon
+from app.engines.wav_output import to_wav_bytes
 from app.engines.worker_client import ping_worker
 from app.storage import artifacts_dir
 

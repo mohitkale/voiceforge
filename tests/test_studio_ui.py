@@ -3,3 +3,5 @@ def test_studio_ui_served(client):
     assert resp.status_code == 200
     assert "text/html" in resp.headers["content-type"]
     assert b"VoiceForge Studio" in resp.content
+    assert b'id="consent"' in resp.content
+    assert b"openvoice-v2" in resp.content
