@@ -81,7 +81,7 @@ app = FastAPI(
         "Fish Speech, CosyVoice 3, IndexTTS2, RVC.\n\n"
         "See the project README for licensing, consent, and deployment notes."
     ),
-    version="0.3.0",
+    version="0.3.1",
     lifespan=lifespan,
     openapi_tags=OPENAPI_TAGS,
 )

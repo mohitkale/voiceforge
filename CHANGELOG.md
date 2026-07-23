@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.1] — 2026-07-24
+
 ### Added
 
 - Open-source launch documentation: responsible use, consent, engines matrix,
@@ -15,11 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Makefile helpers: `start-cpu`, `start-gpu`, `stop`, `logs`, `smoke-openvoice`.
 - Studio consent checkbox; Studio loads engines/voices without a token when the
   API is open (localhost); default engine highlight for `openvoice-v2`.
-- Authentic Studio screenshot and engine-comparison diagram under `docs/assets/`.
+- Authentic Studio screenshot and Mermaid/SVG architecture diagrams.
+- Product-first README rewrite for GitHub discoverability.
 
 ### Fixed
 
 - CI Ruff failures (`S110` / import order) in ASR and Chatterbox paths.
+- README diagrams that failed to render as CSS-class SVGs on GitHub.
 
 ## [0.3.0] — 2026-07-10
 
