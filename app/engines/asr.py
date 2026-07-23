@@ -114,6 +114,7 @@ def release_asr_model() -> None:
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
         except Exception:
-            pass
+            # Best-effort cleanup — free references even if CUDA teardown fails.
+            logger.debug("ASR CUDA cleanup failed", exc_info=True)
     _asr_processor = None
     _asr_model = None

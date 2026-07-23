@@ -44,7 +44,8 @@ def cmd_setup(_args: argparse.Namespace) -> int:
             if torch.cuda.is_available():
                 device = "cuda"
         except Exception:
-            pass
+            # Torch may be missing or CUDA unavailable in the worker venv.
+            device = "cpu"
         ChatterboxTTS.from_pretrained(device=device)
         emit("setup_complete")
     except Exception as exc:
