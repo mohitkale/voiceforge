@@ -57,7 +57,7 @@ class IndexTts2Engine:
         recommended_sample_seconds=8.0,
         languages=SUPPORTED_LANGUAGES,
         requires_gpu=True,
-        license="Check IndexTTS / IndexTeam upstream license before commercial use",
+        license="Bilibili IndexTTS Model License (custom terms; commercial contact)",
         approx_vram_gb=8.0,
     )
 

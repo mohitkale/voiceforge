@@ -245,7 +245,7 @@
       <div>
         <h1>VoiceForge Studio</h1>
         <p class="sub">
-          Clone a voice from a short sample and synthesize speech — all inside Docker.
+          Clone a voice from a short sample and synthesize speech in a local runtime.
           API docs: <a href="/docs" target="_blank" rel="noopener">/docs</a>
         </p>
       </div>
@@ -267,15 +267,7 @@
         <input id="voiceName" type="text" value="Demo Voice" />
 
         <label for="language">Language</label>
-        <select id="language">
-          <option value="en">en</option>
-          <option value="zh">zh</option>
-          <option value="ja">ja</option>
-          <option value="ko">ko</option>
-          <option value="es">es</option>
-          <option value="fr">fr</option>
-          <option value="de">de</option>
-        </select>
+        <select id="language"></select>
 
         <label for="tier">Tier</label>
         <select id="tier">
@@ -339,7 +331,18 @@
         <select id="voiceSelect"></select>
 
         <label for="synthText">Text</label>
-        <textarea id="synthText">Hello from VoiceForge. This is a cloned voice running in Docker.</textarea>
+        <textarea id="synthText">Hello from VoiceForge. This is a cloned voice running locally.</textarea>
+
+        <label for="synthLanguage">Language</label>
+        <select id="synthLanguage"></select>
+
+        <label for="synthStyle">Style or delivery (optional)</label>
+        <input
+          id="synthStyle"
+          type="text"
+          maxlength="500"
+          placeholder="e.g. warm, calm, and conversational"
+        />
 
         <div class="row">
           <button id="synthBtn" type="button">Synthesize</button>
@@ -355,7 +358,13 @@
 
   <script>
     const $ = (id) => document.getElementById(id);
-    const state = { engineId: "openvoice-v2", voices: [], sampleSource: "upload", recordedFile: null };
+    const state = {
+      engineId: "openvoice-v2",
+      engines: [],
+      voices: [],
+      sampleSource: "upload",
+      recordedFile: null,
+    };
 
     const SCRIPTS = [
       "Good morning. Today the weather is nice and sunny. I am going to the market to buy some vegetables and fruits. After that, I will have a cup of chai with my friends.",
@@ -447,13 +456,48 @@
       };
     }
 
+    function loadLanguages(engine, selectId = "language") {
+      const select = $(selectId);
+      const previous = select.value;
+      const languages = engine?.capabilities?.languages || [];
+      select.innerHTML = "";
+      for (const language of languages) {
+        const option = document.createElement("option");
+        option.value = language;
+        option.textContent = language;
+        select.appendChild(option);
+      }
+      if (languages.includes(previous)) {
+        select.value = previous;
+      } else if (languages.includes("en")) {
+        select.value = "en";
+      }
+      select.disabled = languages.length === 0;
+    }
+
+    function syncSynthLanguages() {
+      const voice = state.voices.find((item) => item.id === $("voiceSelect").value);
+      const engine = state.engines.find((item) => item.id === voice?.engineId);
+      loadLanguages(engine, "synthLanguage");
+      if (voice?.language && engine?.capabilities?.languages?.includes(voice.language)) {
+        $("synthLanguage").value = voice.language;
+      }
+    }
+
     async function loadEngines() {
       try {
         const res = await api("/v1/engines", { headers: headers() });
         const engines = await res.json();
+        state.engines = engines;
         showAuthHint(false);
         const root = $("engines");
         root.innerHTML = "";
+        let selected = engines.find((engine) => engine.id === state.engineId);
+        if (!selected) {
+          selected = engines.find((engine) => engine.ready) || engines[0];
+          if (selected) state.engineId = selected.id;
+        }
+        loadLanguages(selected);
         for (const e of engines) {
           const pill = statusPill(e);
           const div = document.createElement("div");
@@ -471,6 +515,7 @@
         `;
           div.addEventListener("click", () => {
             state.engineId = e.id;
+            loadLanguages(e);
             [...root.children].forEach((c) => c.classList.remove("selected"));
             div.classList.add("selected");
             if (e.id === "rvc") $("tier").value = "high_fidelity";
@@ -480,6 +525,7 @@
           });
           root.appendChild(div);
         }
+        syncSynthLanguages();
       } catch (err) {
         if (isAuthError(err)) {
           showAuthHint(true);
@@ -535,6 +581,7 @@
       if (!state.voices.length) {
         list.innerHTML = `<p class="hint">No voices yet.</p>`;
       }
+      syncSynthLanguages();
     }
 
     async function loadVoices() {
@@ -768,7 +815,8 @@
           body: JSON.stringify({
             voiceId,
             text: $("synthText").value,
-            language: $("language").value,
+            language: $("synthLanguage").value || null,
+            style: $("synthStyle").value || null,
           }),
         });
         const blob = await res.blob();
@@ -803,6 +851,7 @@
       log(e.message);
     }));
     $("refreshVoices").addEventListener("click", () => loadVoices().catch((e) => log(e.message)));
+    $("voiceSelect").addEventListener("change", syncSynthLanguages);
     $("token").addEventListener("input", () => {
       clearTimeout(state._tokenTimer);
       state._tokenTimer = setTimeout(reloadAfterToken, 400);

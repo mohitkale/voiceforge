@@ -2,6 +2,5 @@
 # conflict with coqui-tts / VoiceForge's main stack. See scripts/chatterbox_worker.py
 # and VOICEFORGE_CHATTERBOX_PYTHON.
 chatterbox-tts==0.1.7
-huggingface-hub>=0.26.0
-soundfile>=0.12.0
-numpy>=1.24.0,<2.0.0
+soundfile==0.14.0
+numpy==1.26.4

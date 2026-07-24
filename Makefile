@@ -12,7 +12,7 @@ start-gpu:
 	$(COMPOSE) --profile gpu up --build
 
 stop:
-	$(COMPOSE) --profile cpu --profile gpu --profile fish down
+	$(COMPOSE) --profile cpu --profile gpu down
 
 logs:
 	$(COMPOSE) --profile cpu logs -f --tail=200

@@ -17,6 +17,14 @@ from pathlib import Path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.config import get_settings  # noqa: E402
+from app.providers.registry import (  # noqa: E402
+    CHATTERBOX_REVISION,
+    QWEN3_ALIGNER_REVISION,
+    QWEN3_ASR_REVISION,
+    QWEN3_TTS_REVISION,
+    VOXCPM2_REVISION,
+    list_provider_manifests,
+)
 
 
 def download_xtts_v2() -> None:
@@ -37,7 +45,7 @@ def download_f5_tts() -> None:
     settings.models_dir.mkdir(parents=True, exist_ok=True)
     os.environ.setdefault("HF_HOME", str(settings.models_dir))
 
-    print("Downloading F5-TTS v1 base (Apache-2.0 / CC)...")
+    print("Downloading F5-TTS v1 base (CC-BY-NC pretrained weights)...")
     from f5_tts.api import F5TTS
 
     F5TTS(model="F5TTS_v1_Base", hf_cache_dir=str(settings.models_dir))
@@ -49,7 +57,7 @@ def download_openvoice_v2() -> None:
     settings.models_dir.mkdir(parents=True, exist_ok=True)
     os.environ.setdefault("TTS_HOME", str(settings.models_dir))
 
-    print("Downloading OpenVoice V2 VC + YourTTS base (MIT)...")
+    print("Downloading OpenVoice V2 VC + separately licensed YourTTS base...")
     from TTS.api import TTS
 
     TTS("voice_conversion_models/multilingual/multi-dataset/openvoice_v2")
@@ -103,31 +111,78 @@ def download_chatterbox() -> None:
         )
         return
 
-    print("Downloading Chatterbox TTS via worker setup...")
+    model_dir = settings.chatterbox_model_dir or settings.models_dir / "chatterbox"
+    print(f"Downloading Chatterbox Multilingual V3 at {CHATTERBOX_REVISION}...")
     subprocess.run(  # noqa: S603
-        [str(python), str(worker), "setup"],
+        [
+            str(python),
+            str(worker),
+            "setup",
+            "--model-dir",
+            str(model_dir),
+            "--revision",
+            CHATTERBOX_REVISION,
+        ],
         check=True,
     )
-    print(f"Done. Cached under {settings.models_dir}")
+    print(f"Done. Cached under {model_dir}")
 
 
 def download_qwen3_tts() -> None:
+    """Download only; do not import or instantiate the model implementation."""
+
+    from huggingface_hub import snapshot_download
+
     settings = get_settings()
-    settings.models_dir.mkdir(parents=True, exist_ok=True)
-    os.environ.setdefault("HF_HOME", str(settings.models_dir))
-
-    print("Downloading Qwen3-TTS 1.7B Base (Apache-2.0)...")
-    import torch
-    from qwen_tts import Qwen3TTSModel
-
-    device_map = "cuda:0" if torch.cuda.is_available() else "cpu"
-    dtype = torch.bfloat16 if device_map.startswith("cuda") else torch.float32
-    Qwen3TTSModel.from_pretrained(
-        "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
-        device_map=device_map,
-        dtype=dtype,
+    model_dir = settings.qwen3_tts_model_dir or settings.models_dir / "qwen3-tts"
+    print(f"Downloading Qwen3-TTS 1.7B Base at {QWEN3_TTS_REVISION}...")
+    snapshot_download(
+        repo_id="Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+        revision=QWEN3_TTS_REVISION,
+        local_dir=str(model_dir),
     )
-    print(f"Done. Cached under {settings.models_dir}")
+    print(f"Done. Cached under {model_dir}")
+
+
+def download_qwen3_asr() -> None:
+    """Explicit opt-in snapshots only; application startup never calls this."""
+
+    from huggingface_hub import snapshot_download
+
+    settings = get_settings()
+    asr_dir = settings.qwen3_asr_model_dir or settings.models_dir / "qwen3-asr-0.6b"
+    aligner_dir = (
+        settings.qwen3_aligner_model_dir or settings.models_dir / "qwen3-forced-aligner-0.6b"
+    )
+    print(f"Downloading Qwen3-ASR 0.6B at {QWEN3_ASR_REVISION}...")
+    snapshot_download(
+        repo_id="Qwen/Qwen3-ASR-0.6B",
+        revision=QWEN3_ASR_REVISION,
+        local_dir=str(asr_dir),
+    )
+    print(f"Downloading Qwen3 Forced Aligner at {QWEN3_ALIGNER_REVISION}...")
+    snapshot_download(
+        repo_id="Qwen/Qwen3-ForcedAligner-0.6B",
+        revision=QWEN3_ALIGNER_REVISION,
+        local_dir=str(aligner_dir),
+    )
+    print(f"Done. ASR={asr_dir} aligner={aligner_dir}")
+
+
+def download_voxcpm2() -> None:
+    """Explicit opt-in snapshot; no provider code is imported."""
+
+    from huggingface_hub import snapshot_download
+
+    settings = get_settings()
+    model_dir = settings.voxcpm2_model_dir or settings.models_dir / "voxcpm2"
+    print(f"Downloading VoxCPM2 at {VOXCPM2_REVISION}...")
+    snapshot_download(
+        repo_id="openbmb/VoxCPM2",
+        revision=VOXCPM2_REVISION,
+        local_dir=str(model_dir),
+    )
+    print(f"Done. Cached under {model_dir}")
 
 
 def download_fish_speech() -> None:
@@ -200,11 +255,33 @@ ENGINES = {
     "fish-speech": download_fish_speech,
     "cosyvoice-3": download_cosyvoice_3,
     "indextts-2": download_indextts_2,
+    "qwen3-asr": download_qwen3_asr,
+    "voxcpm2": download_voxcpm2,
 }
+
+# "all" preserves the established engine set. Experimental providers require
+# an explicit --engine selection so a routine setup cannot pull new multi-GB
+# snapshots unexpectedly.
+DEFAULT_ENGINES = [
+    "xtts-v2",
+    "f5-tts",
+    "openvoice-v2",
+    "rvc",
+    "chatterbox",
+    "qwen3-tts",
+    "fish-speech",
+    "cosyvoice-3",
+    "indextts-2",
+]
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--list",
+        action="store_true",
+        help="List providers and immutable revisions without downloading anything",
+    )
     parser.add_argument(
         "--engine",
         choices=[*ENGINES.keys(), "all"],
@@ -213,7 +290,19 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    targets = ENGINES.keys() if args.engine == "all" else [args.engine]
+    if args.list:
+        for manifest in list_provider_manifests():
+            revisions = ", ".join(
+                f"{model.model_id}@{model.revision or 'UNPINNED'}"
+                for model in manifest.models
+            )
+            print(
+                f"{manifest.id}: {manifest.integration}; "
+                f"{revisions or 'no manifest model'}"
+            )
+        return
+
+    targets = DEFAULT_ENGINES if args.engine == "all" else [args.engine]
     for name in targets:
         ENGINES[name]()
 

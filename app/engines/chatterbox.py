@@ -1,4 +1,4 @@
-"""Chatterbox (Resemble AI) — MIT zero-shot cloning via an isolated worker.
+"""Chatterbox Multilingual V3 — MIT zero-shot cloning via an isolated worker.
 
 ``chatterbox-tts`` pins numpy&lt;2 and older torch, which conflict with
 coqui-tts in the main VoiceForge venv. Inference runs under
@@ -35,9 +35,8 @@ _WORKER_SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "chatterbox_w
 CHATTERBOX_NATIVE_SAMPLE_RATE = 24000
 
 SUPPORTED_LANGUAGES = [
-    "en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl",
-    "cs", "ar", "zh", "ja", "hu", "ko", "hi", "sv", "da", "fi",
-    "no", "ro", "el",
+    "ar", "da", "de", "el", "en", "es", "fi", "fr", "he", "hi", "it", "ja",
+    "ko", "ms", "nl", "no", "pl", "pt", "ru", "sv", "sw", "tr", "zh",
 ]
 
 
@@ -53,12 +52,25 @@ def resolve_chatterbox_python() -> Path | None:
 
 
 def chatterbox_worker_configured() -> bool:
-    return resolve_chatterbox_python() is not None and _WORKER_SCRIPT.is_file()
+    return (
+        resolve_chatterbox_python() is not None
+        and resolve_chatterbox_model_dir() is not None
+        and _WORKER_SCRIPT.is_file()
+    )
+
+
+def resolve_chatterbox_model_dir() -> Path | None:
+    settings = get_settings()
+    if settings.chatterbox_model_dir:
+        path = Path(settings.chatterbox_model_dir)
+        return path if path.is_dir() else None
+    default = settings.models_dir / "chatterbox"
+    return default if default.is_dir() else None
 
 
 class ChatterboxEngine:
     id = "chatterbox"
-    label = "Chatterbox (Resemble AI)"
+    label = "Chatterbox Multilingual V3"
     capabilities = CloneCapabilities(
         zero_shot=True,
         fine_tunable=False,
@@ -69,17 +81,6 @@ class ChatterboxEngine:
         license="MIT (Resemble AI Chatterbox)",
         approx_vram_gb=4.0,
     )
-
-    def _resolve_device(self) -> str:
-        settings = get_settings()
-        if settings.device != "auto":
-            return settings.device
-        try:
-            import torch
-
-            return "cuda" if torch.cuda.is_available() else "cpu"
-        except Exception:
-            return "cpu"
 
     def is_ready(self) -> bool:
         return chatterbox_worker_configured()
@@ -98,8 +99,13 @@ class ChatterboxEngine:
             raise EngineError(
                 "Chatterbox worker is not configured — set "
                 "VOICEFORGE_CHATTERBOX_PYTHON to an interpreter with "
-                "chatterbox-tts installed (see requirements-chatterbox.txt / "
-                "CPU Docker /opt/chatterbox-venv)"
+                "chatterbox-tts installed and VOICEFORGE_CHATTERBOX_MODEL_DIR "
+                "to an explicitly downloaded local model snapshot"
+            )
+        normalized_language = (language or "en").split("-")[0].lower()
+        if normalized_language not in SUPPORTED_LANGUAGES:
+            raise EngineError(
+                f"Language '{language}' is not supported by Chatterbox Multilingual V3"
             )
 
         async def report(msg: str, extra: dict | None = None) -> None:
@@ -149,6 +155,7 @@ class ChatterboxEngine:
             ref_audio=ref_path,
             text=text,
             output=out_wav,
+            language=(opts.language or artifact.data.get("language") or "en").split("-")[0],
         )
 
         if not out_wav.is_file():

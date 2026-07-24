@@ -33,6 +33,7 @@ class SynthesizeOptions(BaseModel):
     sample_rate: int | None = None
     speed: float | None = None
     language: str | None = None
+    style: str | None = None
 
 
 class VoiceArtifact(BaseModel):

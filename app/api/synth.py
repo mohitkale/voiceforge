@@ -53,6 +53,7 @@ async def synthesize(
         sample_rate=body.sample_rate,
         speed=body.speed,
         language=body.language or voice.language,
+        style=body.style,
     )
 
     async with get_job_limiter():

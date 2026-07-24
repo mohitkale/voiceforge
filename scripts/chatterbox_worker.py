@@ -4,7 +4,8 @@
 Commands:
     ping
     setup
-    synthesize --ref-audio PATH --text TEXT --output PATH [--device cpu|cuda]
+    synthesize --model-dir PATH --ref-audio PATH --text TEXT --language en
+               --output PATH [--device cpu|cuda|mps]
 """
 
 from __future__ import annotations
@@ -33,21 +34,18 @@ def cmd_ping(_args: argparse.Namespace) -> int:
 
 
 def cmd_setup(_args: argparse.Namespace) -> int:
-    emit("loading_chatterbox")
+    model_dir = Path(_args.model_dir)
+    emit("downloading_chatterbox", {"revision": _args.revision})
     try:
-        from chatterbox.tts import ChatterboxTTS
+        from huggingface_hub import snapshot_download
 
-        device = "cpu"
-        try:
-            import torch
-
-            if torch.cuda.is_available():
-                device = "cuda"
-        except Exception:
-            # Torch may be missing or CUDA unavailable in the worker venv.
-            device = "cpu"
-        ChatterboxTTS.from_pretrained(device=device)
-        emit("setup_complete")
+        model_dir.mkdir(parents=True, exist_ok=True)
+        snapshot_download(
+            repo_id="ResembleAI/chatterbox",
+            revision=_args.revision,
+            local_dir=str(model_dir),
+        )
+        emit("setup_complete", {"model_dir": str(model_dir)})
     except Exception as exc:
         emit_error(f"Chatterbox setup failed: {exc}")
         traceback.print_exc()
@@ -55,12 +53,22 @@ def cmd_setup(_args: argparse.Namespace) -> int:
     return 0
 
 
-def _synthesize_with_model(model, ref_audio: Path, text: str, output: Path) -> None:
+def _synthesize_with_model(
+    model,
+    ref_audio: Path,
+    text: str,
+    output: Path,
+    language: str,
+) -> None:
     import numpy as np
     import soundfile as sf
 
     emit("synthesizing")
-    wav = model.generate(text, audio_prompt_path=str(ref_audio))
+    wav = model.generate(
+        text,
+        language_id=language,
+        audio_prompt_path=str(ref_audio),
+    )
     if hasattr(wav, "cpu"):
         arr = wav.squeeze().detach().cpu().numpy().astype("float32")
     else:
@@ -80,7 +88,7 @@ def cmd_synthesize(args: argparse.Namespace) -> int:
 
     emit("loading_model")
     try:
-        from chatterbox.tts import ChatterboxTTS
+        from chatterbox.mtl_tts import ChatterboxMultilingualTTS
     except Exception as exc:
         emit_error(
             "chatterbox-tts is not installed in this worker venv — "
@@ -95,11 +103,20 @@ def cmd_synthesize(args: argparse.Namespace) -> int:
             try:
                 import torch
 
-                device = "cuda" if torch.cuda.is_available() else "cpu"
+                if torch.cuda.is_available():
+                    device = "cuda"
+                elif torch.backends.mps.is_available():
+                    device = "mps"
+                else:
+                    device = "cpu"
             except Exception:
                 device = "cpu"
-        model = ChatterboxTTS.from_pretrained(device=device)
-        _synthesize_with_model(model, ref_audio, args.text, output)
+        model = ChatterboxMultilingualTTS.from_local(
+            args.model_dir,
+            device=device,
+            t3_model=args.t3_model,
+        )
+        _synthesize_with_model(model, ref_audio, args.text, output, args.language)
     except Exception as exc:
         emit_error(f"Chatterbox synthesize failed: {exc}")
         traceback.print_exc()
@@ -109,7 +126,7 @@ def cmd_synthesize(args: argparse.Namespace) -> int:
 
 def cmd_serve(args: argparse.Namespace) -> int:
     try:
-        from chatterbox.tts import ChatterboxTTS
+        from chatterbox.mtl_tts import ChatterboxMultilingualTTS
     except Exception as exc:
         emit_error(f"Chatterbox import failed: {exc}")
         traceback.print_exc()
@@ -120,13 +137,22 @@ def cmd_serve(args: argparse.Namespace) -> int:
         try:
             import torch
 
-            device = "cuda" if torch.cuda.is_available() else "cpu"
+            if torch.cuda.is_available():
+                device = "cuda"
+            elif torch.backends.mps.is_available():
+                device = "mps"
+            else:
+                device = "cpu"
         except Exception:
             device = "cpu"
 
     try:
         emit("loading_model")
-        model = ChatterboxTTS.from_pretrained(device=device)
+        model = ChatterboxMultilingualTTS.from_local(
+            args.model_dir,
+            device=device,
+            t3_model=args.t3_model,
+        )
         emit("ready")
         for line in sys.stdin:
             line = line.strip()
@@ -146,11 +172,12 @@ def cmd_serve(args: argparse.Namespace) -> int:
             ref_audio = Path(req.get("ref_audio", ""))
             output = Path(req.get("output", ""))
             text = req.get("text", "")
-            if not ref_audio.is_file() or not text or not output:
-                emit_error("synthesize requires ref_audio, text, and output")
+            language = req.get("language", "")
+            if not ref_audio.is_file() or not text or not output or not language:
+                emit_error("synthesize requires ref_audio, text, output, and language")
                 continue
             try:
-                _synthesize_with_model(model, ref_audio, text, output)
+                _synthesize_with_model(model, ref_audio, text, output, language)
             except Exception as exc:
                 emit_error(f"Chatterbox synthesize failed: {exc}")
                 traceback.print_exc()
@@ -166,16 +193,23 @@ def main() -> int:
     sub = parser.add_subparsers(dest="command", required=True)
 
     sub.add_parser("ping")
-    sub.add_parser("setup")
+    p_setup = sub.add_parser("setup")
+    p_setup.add_argument("--model-dir", required=True)
+    p_setup.add_argument("--revision", required=True)
 
     p_synth = sub.add_parser("synthesize")
     p_synth.add_argument("--ref-audio", required=True)
     p_synth.add_argument("--text", required=True)
     p_synth.add_argument("--output", required=True)
+    p_synth.add_argument("--language", required=True)
     p_synth.add_argument("--device", default="auto")
+    p_synth.add_argument("--model-dir", required=True)
+    p_synth.add_argument("--t3-model", default="v3")
 
     p_serve = sub.add_parser("serve")
     p_serve.add_argument("--device", default="auto")
+    p_serve.add_argument("--model-dir", required=True)
+    p_serve.add_argument("--t3-model", default="v3")
 
     args = parser.parse_args()
     if args.command == "ping":

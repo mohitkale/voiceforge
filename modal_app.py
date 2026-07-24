@@ -78,6 +78,7 @@ image = (
             "VOICEFORGE_DATA_DIR": "/data",
             "VOICEFORGE_MODELS_DIR": "/models",
             "VOICEFORGE_CHATTERBOX_PYTHON": "/opt/chatterbox-venv/bin/python",
+            "VOICEFORGE_QWEN3_TTS_MODEL_DIR": "/models/qwen3-tts",
             "VOICEFORGE_MODAL_DATA_VOLUME": "voiceforge-data",
             "VOICEFORGE_ENABLED_ENGINES": ",".join(MODAL_ENABLED_ENGINES),
             "VOICEFORGE_WARMUP_ENGINES": "qwen3-tts,chatterbox",
@@ -143,8 +144,8 @@ def download_models(
 
     for name in targets:
         print(f"Downloading engine: {name}")
-        subprocess.run(
-            ["python", "scripts/download_models.py", "--engine", name],
+        subprocess.run(  # noqa: S603 - name is validated against a fixed tuple above
+            [sys.executable, "scripts/download_models.py", "--engine", name],
             check=True,
             cwd="/root",
         )

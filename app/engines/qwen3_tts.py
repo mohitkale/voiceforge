@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
 import shutil
 from pathlib import Path
 
@@ -26,11 +25,14 @@ from app.engines.base import (
     VoiceArtifact,
 )
 from app.engines.wav_output import to_wav_bytes
+from app.providers.registry import QWEN3_TTS_REVISION
+from app.runtime_device import resolve_torch_device, transformers_device_map
 from app.storage import artifacts_dir
 
 logger = logging.getLogger("voiceforge.engines.qwen3_tts")
 
 QWEN3_MODEL = "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+QWEN3_MODEL_REVISION = QWEN3_TTS_REVISION
 QWEN3_NATIVE_SAMPLE_RATE = 24000
 
 SUPPORTED_LANGUAGES = [
@@ -77,19 +79,14 @@ class Qwen3TtsEngine:
         return self._load_lock
 
     def _resolve_device(self) -> str:
-        settings = get_settings()
-        if settings.device != "auto":
-            return settings.device
-        try:
-            import torch
-
-            return "cuda" if torch.cuda.is_available() else "cpu"
-        except Exception:
-            return "cpu"
+        return resolve_torch_device(get_settings().device)
 
     def is_ready(self) -> bool:
         if self._model is not None:
             return True
+        model_dir = get_settings().qwen3_tts_model_dir
+        if model_dir is None or not model_dir.is_dir():
+            return False
         try:
             import qwen_tts  # noqa: F401
         except Exception:
@@ -107,8 +104,13 @@ class Qwen3TtsEngine:
                 return self._model
 
             settings = get_settings()
-            settings.models_dir.mkdir(parents=True, exist_ok=True)
-            os.environ.setdefault("HF_HOME", str(settings.models_dir))
+            model_dir = settings.qwen3_tts_model_dir
+            if model_dir is None or not model_dir.is_dir():
+                raise EngineError(
+                    "Qwen3-TTS is not configured; set "
+                    "VOICEFORGE_QWEN3_TTS_MODEL_DIR to an explicitly downloaded "
+                    "local snapshot"
+                )
 
             def _load():
                 try:
@@ -120,22 +122,20 @@ class Qwen3TtsEngine:
                         "'qwen3' extra or use requirements-qwen3.txt."
                     ) from exc
                 device = self._resolve_device()
-                device_map = device if device == "cpu" else "cuda:0"
-                # bfloat16 on CPU roughly halves the 1.7B model's resident
-                # memory footprint (~7GB fp32 -> ~3.5GB) so it fits comfortably
-                # under the container's memory limit alongside the Whisper ASR
-                # model; modern CPUs handle bf16 matmuls fine, just slower than
-                # fp32 for the tensor-core-optimized case (irrelevant on CPU).
-                dtype = torch.bfloat16
+                device_map = transformers_device_map(device)
+                # Keep CPU/MPS on fp32 until upstream documents a stable lower
+                # precision path. CUDA uses bfloat16 as in the official examples.
+                dtype = torch.bfloat16 if device == "cuda" else torch.float32
                 logger.info(
                     "Loading Qwen3-TTS (%s) on device_map=%s",
-                    QWEN3_MODEL,
+                    model_dir,
                     device_map,
                 )
                 return Qwen3TTSModel.from_pretrained(
-                    QWEN3_MODEL,
+                    str(model_dir),
                     device_map=device_map,
                     dtype=dtype,
+                    local_files_only=True,
                 )
 
             loop = asyncio.get_running_loop()

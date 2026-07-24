@@ -10,6 +10,7 @@ from pathlib import Path
 from app.config import get_settings
 from app.engines.base import EngineError
 from app.engines.subprocess_env import sanitized_subprocess_env, worker_exec_command
+from app.runtime_device import resolve_torch_device
 
 logger = logging.getLogger("voiceforge.engines.chatterbox_daemon")
 
@@ -26,6 +27,15 @@ def resolve_chatterbox_python() -> Path | None:
         return default
     return None
 
+
+def resolve_chatterbox_model_dir() -> Path | None:
+    settings = get_settings()
+    if settings.chatterbox_model_dir:
+        path = Path(settings.chatterbox_model_dir)
+        return path if path.is_dir() else None
+    default = settings.models_dir / "chatterbox"
+    return default if default.is_dir() else None
+
 _proc: asyncio.subprocess.Process | None = None
 _lock: asyncio.Lock | None = None
 
@@ -38,15 +48,7 @@ def _get_lock() -> asyncio.Lock:
 
 
 def _resolve_device() -> str:
-    settings = get_settings()
-    if settings.device != "auto":
-        return settings.device
-    try:
-        import torch
-
-        return "cuda" if torch.cuda.is_available() else "cpu"
-    except Exception:
-        return "cpu"
+    return resolve_torch_device(get_settings().device)
 
 
 async def _read_line(proc: asyncio.subprocess.Process) -> str:
@@ -81,11 +83,24 @@ async def ensure_chatterbox_daemon() -> None:
             return
 
         python = resolve_chatterbox_python()
-        if python is None or not _WORKER_SCRIPT.is_file():
+        model_dir = resolve_chatterbox_model_dir()
+        if python is None or model_dir is None or not _WORKER_SCRIPT.is_file():
             raise EngineError("Chatterbox worker is not configured")
 
         device = _resolve_device()
-        cmd = worker_exec_command(python, _WORKER_SCRIPT, ["serve", "--device", device])
+        cmd = worker_exec_command(
+            python,
+            _WORKER_SCRIPT,
+            [
+                "serve",
+                "--device",
+                device,
+                "--model-dir",
+                str(model_dir),
+                "--t3-model",
+                "v3",
+            ],
+        )
         logger.info("Starting Chatterbox daemon: %s", " ".join(cmd))
         _proc = await asyncio.create_subprocess_exec(
             *cmd,
@@ -102,6 +117,7 @@ async def synthesize_via_daemon(
     ref_audio: Path,
     text: str,
     output: Path,
+    language: str,
 ) -> None:
     global _proc
     await ensure_chatterbox_daemon()
@@ -113,6 +129,7 @@ async def synthesize_via_daemon(
             "ref_audio": str(ref_audio),
             "text": text,
             "output": str(output),
+            "language": language,
         }
     )
     async with _get_lock():

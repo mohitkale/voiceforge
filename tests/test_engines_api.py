@@ -13,6 +13,7 @@ def test_list_engines_includes_built_in_ids(client):
     assert "fish-speech" in ids
     assert "cosyvoice-3" in ids
     assert "indextts-2" in ids
+    assert "voxcpm2" in ids
 
 
 def test_chatterbox_engine_metadata(client):
@@ -21,6 +22,8 @@ def test_chatterbox_engine_metadata(client):
     assert eng["label"].startswith("Chatterbox")
     assert eng["capabilities"]["zero_shot"] is True
     assert "MIT" in eng["capabilities"]["license"]
+    assert "hi" in eng["capabilities"]["languages"]
+    assert "cs" not in eng["capabilities"]["languages"]
 
 
 def test_qwen3_engine_metadata(client):
@@ -68,7 +71,16 @@ def test_f5_engine_metadata(client):
     f5 = next(e for e in resp.json() if e["id"] == "f5-tts")
     assert f5["label"].startswith("F5-TTS")
     assert f5["capabilities"]["zero_shot"] is True
-    assert "Apache" in f5["capabilities"]["license"]
+    assert "CC-BY-NC" in f5["capabilities"]["license"]
+
+
+def test_voxcpm2_is_visible_but_default_disabled(client):
+    resp = client.get("/v1/engines")
+    engine = next(e for e in resp.json() if e["id"] == "voxcpm2")
+    assert "VoxCPM2" in engine["label"]
+    assert engine["configured"] is False
+    assert engine["ready"] is False
+    assert "hi" in engine["capabilities"]["languages"]
 
 
 def test_rvc_engine_metadata(client):
