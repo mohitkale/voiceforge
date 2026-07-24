@@ -10,7 +10,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.api import engines, events, metrics, synth, voices
+from app.api import engines, events, metrics, providers, synth, voices
 from app.config import get_settings
 from app.db import init_db
 from app.engine_readiness import get_health_counts, refresh_readiness, start_warmup
@@ -27,6 +27,10 @@ OPENAPI_TAGS = [
     {
         "name": "engines",
         "description": "List registered cloning engines and their capabilities.",
+    },
+    {
+        "name": "providers",
+        "description": "List side-effect-free provider manifests and runtime support.",
     },
     {
         "name": "voices",
@@ -78,7 +82,7 @@ app = FastAPI(
         "**Web UI:** open `/` for the Docker-hosted studio.\n\n"
         "**Auth:** Bearer token on `/v1/*` when `VOICEFORGE_API_TOKEN` is set.\n\n"
         "**Engines:** OpenVoice V2, F5-TTS, XTTS-v2, Chatterbox, Qwen3-TTS, "
-        "Fish Speech, CosyVoice 3, IndexTTS2, RVC.\n\n"
+        "VoxCPM2 (opt-in), Fish Speech, CosyVoice 3, IndexTTS2, RVC.\n\n"
         "See the project README for licensing, consent, and deployment notes."
     ),
     version="0.3.1",
@@ -99,6 +103,7 @@ if _settings.cors_origin_list:
     )
 
 app.include_router(engines.router)
+app.include_router(providers.router)
 app.include_router(voices.router)
 app.include_router(events.router)
 app.include_router(synth.router)

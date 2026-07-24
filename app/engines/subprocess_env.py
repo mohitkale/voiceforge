@@ -15,6 +15,11 @@ from pathlib import Path
 def sanitized_subprocess_env() -> dict[str, str]:
     env = os.environ.copy()
     env["PYTHONHASHSEED"] = "0"
+    # Inference workers receive local paths and must never contact a model hub.
+    # Explicit setup/download commands are launched separately without this
+    # environment.
+    env["HF_HUB_OFFLINE"] = "1"
+    env["TRANSFORMERS_OFFLINE"] = "1"
     return env
 
 

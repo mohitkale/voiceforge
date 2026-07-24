@@ -1,0 +1,4 @@
+# Experimental isolated worker. Configure a local pinned model snapshot; the
+# application never installs this dependency or downloads weights at startup.
+voxcpm==2.0.3
+soundfile==0.14.0

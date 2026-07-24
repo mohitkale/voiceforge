@@ -5,6 +5,8 @@ def test_forces_pythonhashseed_zero(monkeypatch):
     monkeypatch.setenv("PYTHONHASHSEED", "not-a-number")
     env = sanitized_subprocess_env()
     assert env["PYTHONHASHSEED"] == "0"
+    assert env["HF_HUB_OFFLINE"] == "1"
+    assert env["TRANSFORMERS_OFFLINE"] == "1"
 
 
 def test_worker_exec_command_uses_env_on_unix():

@@ -1,0 +1,4 @@
+# Isolated Qwen3-ASR worker. Models are never fetched by application startup;
+# configure local snapshot directories explicitly.
+qwen-asr==0.0.6
+soundfile==0.14.0

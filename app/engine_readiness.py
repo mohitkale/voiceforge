@@ -30,6 +30,12 @@ def is_engine_ready_cached(engine_id: str) -> bool:
     return _ready.get(engine_id, False)
 
 
+def peek_engine_ready(engine_id: str) -> bool:
+    """Read an existing readiness result without probing engines."""
+
+    return _ready.get(engine_id, False)
+
+
 def get_health_counts() -> tuple[int, int]:
     if _counts is None:
         refresh_readiness()

@@ -53,6 +53,23 @@ def transcribe_reference_audio(
     """Transcribe reference audio without torchcodec (CPU Docker safe)."""
     global _asr_processor, _asr_model
 
+    from app.config import get_settings
+
+    provider_id = get_settings().reference_asr_provider
+    if provider_id == "qwen3-asr":
+        from app.audio_intelligence.qwen3_asr import Qwen3AsrProvider
+
+        result = Qwen3AsrProvider().transcribe(
+            Path(ref_path),
+            language=language,
+            timestamps=False,
+        )
+        return result.text
+    if provider_id != "whisper":
+        raise ValueError(
+            f"Unsupported reference ASR provider '{provider_id}'; expected whisper or qwen3-asr"
+        )
+
     wav, sr = sf.read(str(ref_path), dtype="float32", always_2d=False)
     if getattr(wav, "ndim", 1) > 1:
         wav = wav.mean(axis=1)

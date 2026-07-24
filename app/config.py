@@ -20,7 +20,9 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    host: str = "0.0.0.0"
+    # Local-first default. Containers explicitly bind 0.0.0.0 internally but
+    # Compose publishes the port on 127.0.0.1 only.
+    host: str = "127.0.0.1"
     port: int = 8089
 
     # Bearer token required on every /v1/* request when set. Leave unset only
@@ -35,7 +37,7 @@ class Settings(BaseSettings):
     data_dir: Path = Path("data")
     models_dir: Path = Path("models")
 
-    # "cpu", "cuda", or "auto" (use CUDA if torch reports it's available).
+    # "cpu", "cuda", "mps", or "auto" (CUDA, then Apple MPS, then CPU).
     device: str = "auto"
 
     # Upload / request limits — deliberately conservative for a local-first,
@@ -67,6 +69,24 @@ class Settings(BaseSettings):
     cosyvoice_python: Path | None = None
     indextts_python: Path | None = None
     chatterbox_python: Path | None = None
+    # Workers only load explicitly downloaded local directories. Their
+    # revisions are recorded here and by GET /v1/providers.
+    chatterbox_model_dir: Path | None = None
+    chatterbox_model_revision: str = "5bb1f6e"
+    qwen3_tts_model_dir: Path | None = None
+    qwen3_tts_model_revision: str = "fd4b254"
+    voxcpm2_python: Path | None = None
+    voxcpm2_model_dir: Path | None = None
+    voxcpm2_model_revision: str = "9454c2d"
+
+    # Reference transcription backend. "whisper" preserves the existing
+    # in-process path; qwen3-asr requires an explicit worker + local model.
+    reference_asr_provider: str = "whisper"
+    qwen3_asr_python: Path | None = None
+    qwen3_asr_model_dir: Path | None = None
+    qwen3_asr_model_revision: str = "5eb1441"
+    qwen3_aligner_model_dir: Path | None = None
+    qwen3_aligner_model_revision: str = "c7cbfc2"
 
     # Comma-separated engine ids to enable for clone/synth in this deployment.
     enabled_engines: str = ""

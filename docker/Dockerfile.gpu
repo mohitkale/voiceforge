@@ -40,7 +40,7 @@ RUN python -m venv /opt/rvc-venv \
        torch==2.1.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu121 \
     && /opt/rvc-venv/bin/pip install --no-cache-dir -r requirements-rvc.txt \
     && /opt/rvc-venv/bin/pip install --no-cache-dir \
-       "git+https://github.com/nakshatra-garg/rvc-no-gui.git"
+       "git+https://github.com/nakshatra-garg/rvc-no-gui.git@58bb2561bb3a97d341feda23cf09342ce8dd549e"
 
 COPY app ./app
 COPY scripts ./scripts

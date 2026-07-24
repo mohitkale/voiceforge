@@ -19,6 +19,7 @@ from app.engines.indextts_2 import IndexTts2Engine
 from app.engines.openvoice_v2 import OpenVoiceV2Engine
 from app.engines.qwen3_tts import Qwen3TtsEngine
 from app.engines.rvc import RvcEngine
+from app.engines.voxcpm2 import VoxCpm2Engine
 from app.engines.xtts_v2 import XttsV2Engine
 
 _FACTORIES: dict[str, Callable[[], CloneEngine]] = {
@@ -31,9 +32,11 @@ _FACTORIES: dict[str, Callable[[], CloneEngine]] = {
     "fish-speech": FishSpeechEngine,
     "cosyvoice-3": CosyVoice3Engine,
     "indextts-2": IndexTts2Engine,
+    "voxcpm2": VoxCpm2Engine,
 }
 
 _instances: dict[str, CloneEngine] = {}
+_DEFAULT_DISABLED = {"voxcpm2"}
 
 
 class UnknownEngineError(KeyError):
@@ -45,7 +48,7 @@ def is_engine_enabled(engine_id: str) -> bool:
         return False
     allowed = get_settings().enabled_engine_ids
     if allowed is None:
-        return True
+        return engine_id not in _DEFAULT_DISABLED
     return engine_id in allowed
 
 

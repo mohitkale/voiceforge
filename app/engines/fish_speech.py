@@ -32,10 +32,10 @@ from app.storage import artifacts_dir
 
 logger = logging.getLogger("voiceforge.engines.fish_speech")
 
-SUPPORTED_LANGUAGES = [
-    "en", "zh", "ja", "ko", "de", "fr", "es", "it", "pt", "ru",
-    "ar", "hi", "th", "vi", "id", "nl", "pl", "tr",
-]
+# Upstream currently documents 50+ languages but does not publish a stable,
+# exhaustive ISO list on its primary project page. Keep the API conservative
+# rather than claiming Hindi or other languages that were not verified.
+SUPPORTED_LANGUAGES: list[str] = []
 
 
 def _validate_sidecar_url(url: str) -> str:
@@ -58,7 +58,7 @@ class FishSpeechEngine:
         recommended_sample_seconds=15.0,
         languages=SUPPORTED_LANGUAGES,
         requires_gpu=False,
-        license="Check Fish Audio / fish-speech upstream (open weights; not cloud API)",
+        license="Fish Audio Research License (noncommercial/research weights)",
         approx_vram_gb=8.0,
     )
 

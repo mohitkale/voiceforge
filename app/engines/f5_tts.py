@@ -1,6 +1,7 @@
 """F5-TTS engine — zero-shot cloning via the SWivid diffusion-transformer model.
 
-Apache-2.0 / CC licensed weights (permissive vs XTTS-v2's CPML). Requires a
+The application adapter is MIT; the official pretrained weights are
+CC-BY-NC-4.0. Requires a
 transcript of the reference audio (`ref_text`); VoiceForge auto-transcribes
 the uploaded sample at voice-creation time and caches it in the artifact.
 
@@ -54,7 +55,7 @@ class F5TtsEngine:
         recommended_sample_seconds=12.0,
         languages=SUPPORTED_LANGUAGES,
         requires_gpu=False,
-        license="Apache-2.0 / CC (model weights) — see SWivid/F5-TTS repo",
+        license="CC-BY-NC-4.0 pretrained weights (F5-TTS code is MIT)",
         approx_vram_gb=4.0,
     )
 

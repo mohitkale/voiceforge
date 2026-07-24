@@ -18,12 +18,16 @@ make start-cpu
 
 - Studio: http://localhost:8089/
 - OpenAPI: http://localhost:8089/docs
+- Provider manifests: http://localhost:8089/v1/providers
 - Leaving `VOICEFORGE_API_TOKEN` empty is acceptable **only** for pure localhost
   (the app warns loudly). Never expose an unauthenticated instance.
 
+Compose publishes `127.0.0.1:8089` by default. Containers bind `0.0.0.0`
+internally only so the loopback-published host port can reach them.
+
 ## LAN
 
-1. Bind/publish port 8089 only on trusted interfaces (compose already maps host 8089).
+1. Change the loopback-only Compose mapping deliberately to a trusted interface.
 2. Set a strong `VOICEFORGE_API_TOKEN`.
 3. Restrict `VOICEFORGE_CORS_ORIGINS` to known frontends (or keep empty and
    proxy from your backend).
@@ -85,6 +89,11 @@ so tokens stay off the client.
 |------|------------------|
 | Voices, SQLite | `./data` bind mount |
 | Model weights | Docker volume `models-cache` → `/app/models` |
+
+Experimental workers require explicit local model directories. Application
+startup never downloads their snapshots. The removed Fish `latest` sidecar
+must be replaced by an operator-reviewed digest-pinned image on a private
+network.
 
 Back up `data/` if voices matter. Model volumes can be re-downloaded.
 

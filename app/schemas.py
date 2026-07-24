@@ -55,6 +55,7 @@ class SynthesizeRequest(CamelModel):
     sample_rate: int | None = None
     speed: float | None = Field(default=None, gt=0.25, le=4.0)
     language: str | None = None
+    style: str | None = Field(default=None, max_length=500)
 
 
 class MetricsSnapshot(CamelModel):
