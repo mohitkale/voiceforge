@@ -127,6 +127,7 @@ Details: [RESPONSIBLE_USE.md](RESPONSIBLE_USE.md) ·
 ### Higher-quality / heavier zero-shot
 
 - `f5-tts`, `xtts-v2` (CPML non-commercial), `chatterbox`, `qwen3-tts`
+- `voxcpm2` (experimental, local-worker opt-in; Hindi + English)
 
 ### Advanced / externally managed
 
@@ -139,14 +140,15 @@ Full matrix (CPU/GPU, Docker defaults, licences, verification labels):
 | Engine | Clone type | CPU | GPU | Default CPU image | Licence note | Verification |
 |--------|------------|-----|-----|-------------------|--------------|--------------|
 | `openvoice-v2` | Zero-shot | Yes | Yes | Yes | MIT VC + verify YourTTS base | Verified (CPU e2e) |
-| `f5-tts` | Zero-shot | Slow | Recommended | Yes | Apache-2.0 / CC (upstream) | Verified (CPU e2e) |
+| `f5-tts` | Zero-shot | Slow | Recommended | Yes | **CC-BY-NC pretrained weights** | Verified (CPU e2e) |
 | `xtts-v2` | Zero-shot | Slow | Recommended | Yes | **CPML non-commercial** | Verified (CPU e2e) |
-| `chatterbox` | Zero-shot | Worker | Optional | Yes (worker venv) | MIT | Smoke-documented |
-| `qwen3-tts` | Zero-shot | Limited | Recommended | Yes | Apache-2.0 | Smoke-documented |
+| `chatterbox` | Zero-shot | Worker/MPS | Optional | Worker only; local weights required | MIT | Multilingual V3 wiring; inference unverified |
+| `qwen3-tts` | Zero-shot | Limited/MPS experimental | Recommended | Yes; local snapshot required | Apache-2.0 | Smoke-documented |
+| `voxcpm2` | Zero-shot | Experimental MPS | Recommended | No | Apache-2.0 | Disabled-by-default scaffold |
 | `rvc` | Trained | No | Required | No (GPU image) | MIT architecture | GPU verification needed |
-| `fish-speech` | Sidecar | Depends | Recommended | External | Check upstream | External sidecar |
+| `fish-speech` | Sidecar | Depends | Recommended | External | Fish Audio Research License | Digest-pinned sidecar required |
 | `cosyvoice-3` | Zero-shot | Limited | Recommended | Extra install | Apache-2.0 | GPU verification needed |
-| `indextts-2` | Zero-shot | Limited | Recommended | Extra install | Check upstream | GPU verification needed |
+| `indextts-2` | Zero-shot | Limited | Recommended | Extra install | Custom Bilibili model license | GPU verification needed |
 
 GPU Docker paths were written carefully but **not** run against real NVIDIA
 hardware during development — please verify on your host.
@@ -172,7 +174,8 @@ After the first build, `make start-cpu` (or compose `up` without `--build`) is
 enough. Helpers: `make stop`, `make logs`, `make smoke-openvoice`.
 
 Compose caps the CPU service at **4 CPUs / 6 GB RAM** by default. Data → `./data`;
-weights → `models-cache` Docker volume.
+weights → `models-cache` Docker volume. The host port is published on
+`127.0.0.1` only.
 
 **First clone:** follow **[docs/FIRST_CLONE.md](docs/FIRST_CLONE.md)**
 (sample length, quiet room, expected download time, deletion).
@@ -338,6 +341,8 @@ Issue/PR templates live under `.github/`.
 | [FIRST_CLONE.md](docs/FIRST_CLONE.md) | First successful clone |
 | [ENGINES.md](docs/ENGINES.md) | Support matrix |
 | [ENGINE_LICENSING.md](docs/ENGINE_LICENSING.md) | Licence matrix |
+| [EXPERIMENTAL_STUDIO.md](docs/EXPERIMENTAL_STUDIO.md) | Mac, Docker CPU, Colab/Kaggle profiles and roadmap |
+| [BENCHMARKING.md](docs/BENCHMARKING.md) | English/Hindi/Hinglish benchmark harness |
 | [RESPONSIBLE_USE.md](RESPONSIBLE_USE.md) / [CONSENT.md](docs/CONSENT.md) | Safety & consent |
 | [WATERMARKING.md](docs/WATERMARKING.md) | Fingerprint limitations |
 | [SELF_HOSTING.md](docs/SELF_HOSTING.md) | Deploy securely |
@@ -359,7 +364,9 @@ docker compose -f docker/docker-compose.yml config
 ```
 
 Unit tests use a `FakeEngine` (no multi-GB downloads). Optional ML extras are
-in `requirements-*.txt` / `pyproject.toml` optional deps.
+in `requirements-*.txt` / `pyproject.toml` optional deps. `GET /v1/providers`
+returns model revisions, license gates, runtime support, and integration state
+without importing an ML SDK or contacting a model hub.
 
 ## Repo layout
 

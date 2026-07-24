@@ -1,8 +1,8 @@
 # Local Python setup (macOS)
 
-VoiceForge needs **Python 3.11 or 3.12** on your Mac for the Modal CLI, dev
-venv, and smoke tests. **Docker runs the service** — you do not need Python
-working to use VoiceForge via Docker alone.
+VoiceForge needs **Python 3.11 or 3.12** on your Mac for development,
+Mac-native MPS workers, and smoke tests. Docker remains the simplest CPU API/UI
+profile, but Linux containers on Docker Desktop cannot use Apple Metal.
 
 If `python` or `pip` show as “command not found”, use this guide.
 
@@ -131,7 +131,7 @@ weakens isolation.
 
 ### Safe options (pick one)
 
-**A. Project venv (recommended for VoiceForge + Modal)**
+**A. Project venv (recommended for VoiceForge)**
 
 ```bash
 cd /path/to/audio-cloning
@@ -139,45 +139,19 @@ python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install -U pip
 pip install -e ".[dev]"
-
-# Modal CLI (isolated inside this venv — does not touch system Python)
-pip install 'cbor2>=5.9.0'   # pure-Python wheel; avoids Rust build + known CVEs in 5.6.x
-pip install modal
-modal setup
 ```
 
-**B. pipx (CLI tools only, separate venv per tool)**
+**B. pipx (optional CLI tools only, separate venv per tool)**
 
 ```bash
 brew install pipx
 pipx ensurepath
-# Use Python 3.12 — 3.13/3.14 may lack wheels for modal deps (cbor2)
-pipx install --python python3.12 modal
 source ~/.zshrc   # adds ~/.local/bin
-modal setup
 ```
 
 **C. Never do this**
 
-```bash
-pip install --break-system-packages modal   # avoid
-```
-
----
-
-## Modal CLI (after venv or pipx)
-
-Modal runs VoiceForge in the **cloud**; locally you only need the CLI:
-
-```bash
-cd /path/to/audio-cloning
-source .venv/bin/activate
-modal setup
-modal deploy modal_app.py
-```
-
-If `modal` is not found outside the venv, either activate `.venv` first or
-use: `python -m modal deploy modal_app.py`
+Do not use `pip install --break-system-packages ...`.
 
 ---
 
@@ -195,11 +169,6 @@ Fix reported issues by upgrading pinned deps in `requirements*.txt` /
 `pyproject.toml`, then re-run tests. Do not install random packages into
 system Python.
 
-For Modal cloud images, dependencies are pinned in `modal_app.py` — update
-there when advisories affect runtime packages.
-
----
-
 ## Known issues log
 
 | Issue | Fix |
@@ -207,7 +176,6 @@ there when advisories affect runtime packages.
 | `python: command not found` but `python3` works | Use `python3.12` or add aliases (Fix 2) |
 | PATH missing `/usr/local/bin` | Append in `~/.zshrc` (Fix 1); never replace entire PATH |
 | `externally-managed-environment` on `pip install` | Use venv or pipx (Fix 4); never `--break-system-packages` |
-| `modal` install fails building `cbor2` / Rust | `pip install 'cbor2>=5.9.0'` first, then `pip install modal`; or use `python3.12` with pipx |
 | Default `python3` is 3.13 | Prefer `python3.12` for this project (see aliases in `~/.zshrc`) |
 | `Documents/software/gradle/bin` in PATH without `$HOME` | Use `$HOME/Documents/software/gradle/bin` |
 | Duplicate `.venv/bin` repeated in PATH | Remove duplicate `source .venv/bin/activate` from shell startup |
@@ -217,7 +185,6 @@ there when advisories affect runtime packages.
 
 ## Related docs
 
-- [Deploy on Modal.com](deploy-modal.md)
 - [Deploy on Kaggle](deploy-kaggle.md)
-- [Deploy on Lightning.ai](deploy-lightning.md)
+- [Experimental studio](EXPERIMENTAL_STUDIO.md)
 - [README Quickstart](../README.md#quickstart-docker)
