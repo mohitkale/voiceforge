@@ -1,0 +1,24 @@
+{"id":"en-short-neutral","language_group":"english","language":"en","text":"The studio is ready for a careful listening test.","emotion":"neutral","tags":["short","baseline"]}
+{"id":"en-names-dates","language_group":"english","language":"en","text":"Dr. Meera Shah will visit Bengaluru on July 24, 2026, at 10:45 a.m.","emotion":"neutral","tags":["names","dates","numbers"]}
+{"id":"en-question","language_group":"english","language":"en","text":"Could you send the revised audio before lunch?","emotion":"curious","tags":["question","prosody"]}
+{"id":"en-excited","language_group":"english","language":"en","text":"We did it! The final mix sounds wonderfully clear.","emotion":"excited","tags":["emotion","exclamation"]}
+{"id":"en-sad","language_group":"english","language":"en","text":"I wish the old recording had not been lost.","emotion":"sad","tags":["emotion"]}
+{"id":"en-long","language_group":"english","language":"en","text":"A reliable speech system should remain natural across longer sentences, preserve punctuation, pronounce uncommon names carefully, and finish without drifting in pace or timbre.","emotion":"neutral","tags":["long","stability"]}
+{"id":"hi-short-neutral","language_group":"hindi-devanagari","language":"hi","text":"यह आवाज़ परीक्षण के लिए तैयार है।","emotion":"neutral","tags":["short","baseline"]}
+{"id":"hi-names-dates","language_group":"hindi-devanagari","language":"hi","text":"डॉक्टर मीरा शाह चौबीस जुलाई दो हज़ार छब्बीस को बेंगलुरु आएँगी।","emotion":"neutral","tags":["names","dates","numbers"]}
+{"id":"hi-question","language_group":"hindi-devanagari","language":"hi","text":"क्या आप दोपहर से पहले नई रिकॉर्डिंग भेज सकते हैं?","emotion":"curious","tags":["question","prosody"]}
+{"id":"hi-excited","language_group":"hindi-devanagari","language":"hi","text":"कमाल हो गया! अंतिम मिश्रण बहुत साफ़ सुनाई दे रहा है।","emotion":"excited","tags":["emotion","exclamation"]}
+{"id":"hi-sad","language_group":"hindi-devanagari","language":"hi","text":"काश पुरानी रिकॉर्डिंग खोई नहीं होती।","emotion":"sad","tags":["emotion"]}
+{"id":"hi-phonetics","language_group":"hindi-devanagari","language":"hi","text":"ठंडी सड़क पर खड़ी गाड़ी धीरे-धीरे मुड़ी।","emotion":"neutral","tags":["aspiration","retroflexion","pronunciation"]}
+{"id":"hi-roman-short","language_group":"hindi-romanized","language":"hi","text":"Yeh awaaz testing ke liye taiyaar hai.","emotion":"neutral","tags":["romanized","baseline"]}
+{"id":"hi-roman-question","language_group":"hindi-romanized","language":"hi","text":"Kya aap nayi recording dopahar se pehle bhej sakte hain?","emotion":"curious","tags":["romanized","question"]}
+{"id":"hi-roman-emotion","language_group":"hindi-romanized","language":"hi","text":"Waah, final mix sach mein bahut accha lag raha hai!","emotion":"excited","tags":["romanized","emotion"]}
+{"id":"hi-roman-names","language_group":"hindi-romanized","language":"hi","text":"Meera kal Bengaluru se Mumbai jaayegi.","emotion":"neutral","tags":["romanized","names"]}
+{"id":"hinglish-devanagari","language_group":"hinglish","language":"hi","text":"आज की meeting में final audio review करेंगे।","emotion":"neutral","tags":["code-switch","word-boundary"]}
+{"id":"hinglish-latin","language_group":"hinglish","language":"hi","text":"Kal studio mein voice cloning ka safe test karenge.","emotion":"neutral","tags":["code-switch","romanized"]}
+{"id":"hinglish-question","language_group":"hinglish","language":"hi","text":"क्या तुम updated benchmark report email कर सकते हो?","emotion":"curious","tags":["code-switch","question"]}
+{"id":"hinglish-numbers","language_group":"hinglish","language":"hi","text":"Version 2.0 ka latency score 1.5 seconds tha.","emotion":"neutral","tags":["code-switch","numbers"]}
+{"id":"hinglish-excited","language_group":"hinglish","language":"hi","text":"बहुत बढ़िया! This take sounds absolutely natural.","emotion":"excited","tags":["code-switch","emotion"]}
+{"id":"hinglish-phrase-switch","language_group":"hinglish","language":"hi","text":"Please ध्यान से सुनिए, क्योंकि अगला हिस्सा बहुत important है।","emotion":"calm","tags":["code-switch","phrase-boundary"]}
+{"id":"hinglish-proper-noun","language_group":"hinglish","language":"hi","text":"OpenAI का नया demo मुंबई में दिखाया गया।","emotion":"neutral","tags":["code-switch","proper-noun"]}
+{"id":"hinglish-long","language_group":"hinglish","language":"hi","text":"जब benchmark पूरा हो जाए, raw audio को preserve करना और normalized copies को अलग folder में रखना ताकि comparison fair रहे।","emotion":"neutral","tags":["code-switch","long","stability"]}
