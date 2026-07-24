@@ -71,4 +71,3 @@ def test_audio_score_uses_existing_output_only(tmp_path):
     assert score.duration_seconds == 1.0
     assert score.wer == 0
     assert score.real_time_factor == 0.5
-

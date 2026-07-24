@@ -13,4 +13,3 @@ def test_list_mode_reports_manifests_without_running_downloads(monkeypatch, caps
     output = capsys.readouterr().out
     assert "voxcpm2: experimental" in output
     assert "openbmb/VoxCPM2@9454c2d" in output
-

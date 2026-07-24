@@ -62,4 +62,3 @@ group summaries. Missing cases are explicit.
 The older `scripts/benchmark_quality.py` remains a single-file convenience
 tool. It may download/load Whisper or Resemblyzer models and is not the
 no-model shared harness.
-

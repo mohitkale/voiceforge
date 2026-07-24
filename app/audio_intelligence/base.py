@@ -39,4 +39,3 @@ class AudioIntelligenceProvider(Protocol):
         text: str,
         language: str,
     ) -> list[AlignmentSegment]: ...
-

@@ -130,4 +130,3 @@ class Qwen3AsrProvider:
             ]
         )
         return [AlignmentSegment.model_validate(item) for item in payload["timestamps"]]
-

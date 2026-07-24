@@ -72,4 +72,3 @@ class ProviderStatus(BaseModel):
     manifest: ProviderManifest
     configured: bool
     ready: bool
-

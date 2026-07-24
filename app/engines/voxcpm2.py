@@ -187,4 +187,3 @@ class VoxCpm2Engine:
             source_rate=int(source_rate) or VOXCPM2_NATIVE_SAMPLE_RATE,
             target_rate=opts.sample_rate or 44100,
         )
-
